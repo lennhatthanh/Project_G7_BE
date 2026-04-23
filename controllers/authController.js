@@ -2,10 +2,10 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const sendVerificationEmail = require("./mailerController");
 require("dotenv").config();
-const nguoidungs = require("../models/nguoidungs");
-const chusans = require("../models/chusans");
-const admins = require("../models/admins");
-const nhanviens = require("../models/nhanviens");
+const {Nguoidung} = require("../models");
+const {Chusan} = require("../models");
+const {Admin} = require("../models");
+const {Nhanvien} = require("../models");
 let refreshTokens = [];
 
 class authController {
@@ -28,7 +28,7 @@ class authController {
             const token = jwt.sign({ email }, process.env.JWT_EMAIL_SECRET, {
                 expiresIn: "1d",
             });
-            await nguoidungs.add(ho_ten, email, hashed, so_dien_thoai, gioi_tinh);
+            await Nguoidung.add(ho_ten, email, hashed, so_dien_thoai, gioi_tinh);
             await sendVerificationEmail(email, token);
             return res.status(200).json({ message: "Vui lòng kiểm tra email để xác thực" });
         } catch (error) {
@@ -52,7 +52,7 @@ class authController {
         try {
             const verify = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
             const email = verify.email;
-            await nguoidungs.update(email);
+            await Nguoidung.update(email);
             res.status(200).json({ message: "Xác thực thành công" });
         } catch (error) {
             res.status(500).json({ message: "Lỗi: " + error.message });
@@ -62,7 +62,7 @@ class authController {
     async dangNhap(req, res) {
         try {
             const { email, mat_khau } = req.body;
-            const user = await nguoidungs.getByEmail(email);
+            const user = await Nguoidung.getByEmail(email);
             if (user.rows.length === 0) {
                 return res.status(401).json({ message: "Không tìm thấy tài khoản" });
             }
@@ -105,7 +105,7 @@ class authController {
     async dangNhapChuSan(req, res) {
         try {
             const { email, mat_khau } = req.body;
-            const chusan = await chusans.getByEmail(email);
+            const chusan = await Chusan.getByEmail(email);
             if (chusan.rows.length === 0) {
                 return res.status(401).json({ message: "Không tìm thấy tài khoản" });
             }
@@ -129,7 +129,7 @@ class authController {
                 const { mat_khau, ...others } = chusan.rows[0];
                 return res.status(200).json({
                     message: "Đăng nhập thành công",
-                    chusans: others,
+                    Chusan: others,
                     accessToken,
                     role,
                 });
@@ -142,7 +142,7 @@ class authController {
     async dangNhapNhanVien(req, res) {
         try {
             const { email, mat_khau } = req.body;
-            const nhanvien = await nhanviens.getByEmail(email);
+            const nhanvien = await Nhanvien.getByEmail(email);
             if (nhanvien.rows.length === 0) {
                 return res.status(401).json({ message: "Không tìm thấy tài khoản" });
             }
@@ -179,7 +179,7 @@ class authController {
     async dangNhapAdmin(req, res) {
         try {
             const { email, mat_khau } = req.body;
-            const admin = await admins.getByEmail(email);
+            const admin = await Admin.getByEmail(email);
             if (admin.rows.length === 0) {
                 return res.status(401).json({ message: "Không tìm thấy tài khoản" });
             }

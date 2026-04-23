@@ -1,50 +1,73 @@
-const pool = require("../db");
-class DichVu {
-  async add(id_san, ten_dich_vu, mo_ta, don_gia) {
-    const data = await pool.query(
-      "INSERT INTO dichvus(id_san, ten_dich_vu, mo_ta, don_gia) VALUES ($1,$2,$3,$4) returning *",
-      [id_san,ten_dich_vu, mo_ta, don_gia]
-    );
-    return data.rows[0];
+'use strict';
+const { Model } = require('sequelize');
+
+module.exports = (sequelize, DataTypes) => {
+  class Dichvu extends Model {
+    static associate(models) {
+      Dichvu.belongsTo(models.Santhethao, { foreignKey: 'id_san' });
+      Dichvu.hasMany(models.Datsandichvu, { foreignKey: 'id_dich_vu' });
+    }
+
+    static async add(id_san, ten_dich_vu, mo_ta, don_gia) {
+      return await this.create({ id_san, ten_dich_vu, mo_ta, don_gia });
+    }
+
+    static async updateRecord(id, id_san, ten_dich_vu, mo_ta, don_gia, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { id_san, ten_dich_vu, mo_ta, don_gia, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
+    }
+
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
+    }
+
+    static async getAll(id_chu_san) {
+      const query = `
+        SELECT dichvus.*, santhethaos.id_chu_san
+        FROM dichvus 
+        JOIN santhethaos ON dichvus.id_san = santhethaos.id 
+        WHERE santhethaos.id_chu_san = :id_chu_san AND santhethaos.tinh_trang = true
+      `;
+      return await sequelize.query(query, { replacements: { id_chu_san }, type: sequelize.QueryTypes.SELECT });
+    }
+
+    static async getAllOpenById(id_san) {
+      const query = `
+        SELECT dichvus.*
+        FROM dichvus 
+        JOIN santhethaos ON dichvus.id_san = santhethaos.id 
+        WHERE dichvus.id_san = :id_san AND dichvus.tinh_trang = true
+      `;
+      return await sequelize.query(query, { replacements: { id_san }, type: sequelize.QueryTypes.SELECT });
+    }
+
+    static async getAllOpen() {
+      const query = `
+        SELECT dichvus.*
+        FROM dichvus 
+        JOIN santhethaos ON dichvus.id_san = santhethaos.id 
+        WHERE dichvus.tinh_trang = true AND santhethaos.tinh_trang = true
+      `;
+      return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+    }
   }
-  async update(id, id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang) {
-    const data = await pool.query(
-      'update dichvus set id_san = $1,ten_dich_vu =$2, mo_ta=$3, don_gia=$4, tinh_trang = $5,"updatedAt" = NOW() where id =$6 RETURNING * ',
-      [id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang, id]
-    );
-    return data.rows[0];
-  }
-  async delete(id) {
-    const data = await pool.query(
-      "delete from dichvus where id=$1 RETURNING *",
-      [id]
-    );
-    return data.rows[0];
-  }
-  async getAll(id) {
-    const data = await pool.query(
-      `select dichvus.*, santhethaos.id_chu_san
-      from dichvus 
-      join santhethaos on dichvus.id_san = santhethaos.id where santhethaos.id_chu_san = $1 and santhethaos.tinh_trang = true `, [id]
-    );
-    return data.rows;
-  }
-  async getAllOpenById(id) {
-    const data = await pool.query(
-      `select dichvus.*
-      from dichvus 
-      join santhethaos on dichvus.id_san = santhethaos.id where dichvus.id_san = $1 AND dichvus.tinh_trang = true`, [id]
-    );
-    return data.rows;
-  }
-  async getAllOpen() {
-    const data = await pool.query(
-      `select dichvus.*
-      from dichvus 
-      join santhethaos on dichvus.id_san = santhethaos.id 
-      where dichvus.tinh_trang = true and santhethaos.tinh_trang = true`
-    );
-    return data.rows;
-  }
-}
-module.exports = new DichVu();
+
+  Dichvu.init({
+    id_san: DataTypes.INTEGER,
+    ten_dich_vu: DataTypes.STRING,
+    mo_ta: DataTypes.STRING,
+    don_gia: DataTypes.NUMERIC,
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Dichvu',
+    tableName: 'dichvus',
+    indexes: [{ fields: ['id_san'], name: 'idx_dichvus_san' }]
+  });
+  return Dichvu;
+};

@@ -1,75 +1,71 @@
-const pool = require("../db");
+'use strict';
+const { Model } = require('sequelize');
 
-class chusans {
-  async add(ho_ten, email, hashed, so_dien_thoai, gioi_tinh) {
-    const data = await pool.query(
-      "INSERT INTO chusans(ho_ten ,email,mat_khau ,so_dien_thoai ,gioi_tinh) VALUES ($1,$2,$3,$4,$5) RETURNING *",
-      [ho_ten, email, hashed, so_dien_thoai, gioi_tinh]
-    );
-    return data.rows[0];
-  }
+module.exports = (sequelize, DataTypes) => {
+  class Chusan extends Model {
+    static associate(models) {
+      Chusan.hasMany(models.Santhethao, { foreignKey: 'id_chu_san' });
+    }
 
-  async update(
-    id,
-    ho_ten,
-    email,
-    hashed,
-    so_dien_thoai,
-    gioi_tinh,
-    tinh_trang
-  ) {
-    const data = await pool.query(
-      'UPDATE chusans SET ho_ten = $1, mat_khau = $2, email = $3, so_dien_thoai = $4, gioi_tinh = $5, tinh_trang = $6, "updatedAt" = NOW() WHERE id = $7 RETURNING *',
-      [ho_ten, hashed, email, so_dien_thoai, gioi_tinh, tinh_trang, id]
-    );
-    return data.rows[0];
-  }
+    static async add(ho_ten, email, hashed, so_dien_thoai, gioi_tinh) {
+      return await this.create({ ho_ten, email, mat_khau: hashed, so_dien_thoai, gioi_tinh });
+    }
 
-  async updateOpen(
-    id,
-    ho_ten,
-    so_dien_thoai,
-    gioi_tinh,
-    tinh_trang
-  ) {
-    const data = await pool.query(
-     'UPDATE chusans SET ho_ten = $1, so_dien_thoai = $2, gioi_tinh = $3, tinh_trang = $4, "updatedAt" = NOW() WHERE id = $5 RETURNING *',
-      [ho_ten, so_dien_thoai, gioi_tinh, tinh_trang, id]
-    );
-    return data.rows[0];
-  }
+    static async updateRecord(id, ho_ten, email, hashed, so_dien_thoai, gioi_tinh, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { ho_ten, mat_khau: hashed, email, so_dien_thoai, gioi_tinh, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
+    }
 
-  async changeMatKhau(id, hashed) {
-    await pool.query('UPDATE chusans SET mat_khau = $1, "updatedAt" = NOW() WHERE id = $2',[hashed, id])
-  }
+    static async updateOpen(id, ho_ten, so_dien_thoai, gioi_tinh, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { ho_ten, so_dien_thoai, gioi_tinh, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
+    }
 
-  async getById(id) {
-    const data = await pool.query("SELECT * FROM chusans where id = $1", [
-      id,
-    ]);
-    return data.rows[0];
-  }
-  async getByEmail(email) {
-    const data = await pool.query("SELECT * FROM chusans where email = $1", [
-      email,
-    ]);
-    return data;
-  }
-  async getAll() {
-    const data = await pool.query(
-      `SELECT chusans.*
-      FROM chusans`
-    );
-    return data.rows;
+    static async changeMatKhau(id, hashed) {
+      return await this.update({ mat_khau: hashed }, { where: { id } });
+    }
+
+    static async getById(id) {
+      return await this.findByPk(id);
+    }
+
+    static async getByEmail(email) {
+      const data = await this.findOne({ where: { email } });
+      return { rows: data ? [data] : [], rowCount: data ? 1 : 0 };
+    }
+
+    static async getAll() {
+      return await this.findAll();
+    }
+
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
+    }
   }
 
-  async delete(id) {
-    const data = await pool.query(
-      "DELETE FROM chusans WHERE id = $1 RETURNING *",
-      [id]
-    );
-    return data.rows[0];
-  }
-}
-
-module.exports = new chusans();
+  Chusan.init({
+    ho_ten: DataTypes.STRING,
+    email: { type: DataTypes.STRING, unique: true },
+    mat_khau: DataTypes.STRING,
+    so_dien_thoai: { type: DataTypes.STRING, unique: true },
+    gioi_tinh: DataTypes.ENUM('Nam', 'Nữ', 'Khác'),
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Chusan',
+    tableName: 'chusans',
+    indexes: [
+      { unique: true, fields: ['email'], name: 'idx_chusans_email' },
+      { unique: true, fields: ['so_dien_thoai'], name: 'idx_chusans_phone' }
+    ]
+  });
+  return Chusan;
+};

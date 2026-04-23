@@ -1,4 +1,4 @@
-const nguoidungs = require("../models/nguoidungs");
+const {Nguoidung} = require("../models");
 const bcrypt = require('bcrypt')
 
 class nguoidungController {
@@ -7,7 +7,7 @@ class nguoidungController {
         const {id, ho_ten,email,mat_khau,so_dien_thoai,gioi_tinh,tinh_trang} = req.body
         const salt = await bcrypt.genSalt(10);
         const hashed = await bcrypt.hash(mat_khau, salt);
-        const data = await nguoidungs.update(id, ho_ten,email,hashed,so_dien_thoai,gioi_tinh,tinh_trang);
+        const data = await Nguoidung.update(id, ho_ten,email,hashed,so_dien_thoai,gioi_tinh,tinh_trang);
         return res.status(200).json({ message: "Cập nhật thành công", data: data });
       } catch (error) {
         return res.status(500).json({message: "Lỗi: " + error.message});
@@ -17,7 +17,7 @@ class nguoidungController {
     async capNhatNguoiDungOpen(req, res) {
       try {
         const { ho_ten,so_dien_thoai,gioi_tinh} = req.body
-        const data = await nguoidungs.updateOpen(req.user.id, ho_ten,so_dien_thoai,gioi_tinh);
+        const data = await Nguoidung.updateOpen(req.user.id, ho_ten,so_dien_thoai,gioi_tinh);
         return res.status(200).json({ message: "Cập nhật thành công", data: data });
       } catch (error) {
         return res.status(500).json({message: "Lỗi: " + error.message});
@@ -27,7 +27,7 @@ class nguoidungController {
     async xoaNguoiDung(req, res) {
       try {
         const id  = req.params.id
-        const data = await nguoidungs.delete(id);
+        const data = await Nguoidung.delete(id);
         return res.status(200).json({ message: "Xóa thành công", data: data });
       } catch (error) {
         return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -40,7 +40,7 @@ class nguoidungController {
         if(mat_khau_cu1 !== mat_khau_cu2){
           return res.status(400).json({message: "Mật khẩu cũ không trùng khớp"})
         } 
-        const nguoidung = await nguoidungs.getById(req.user.id)
+        const nguoidung = await Nguoidung.getById(req.user.id)
         const validPassword = await bcrypt.compare(
                 mat_khau_cu1,
                 nguoidung.mat_khau
@@ -53,7 +53,7 @@ class nguoidungController {
         }
         const salt = await bcrypt.genSalt(10);
         const hashed = await bcrypt.hash(mat_khau_moi, salt);
-        await nguoidungs.changeMatKhau(req.user.id, hashed)
+        await Nguoidung.changeMatKhau(req.user.id, hashed)
         return res.status(200).json({message: "Đổi mật khẩu thành công"})
       } catch (error){
         return res.status(500).json({message: "Lỗi: " + error.message})
@@ -62,7 +62,7 @@ class nguoidungController {
   
     async getNguoiDung(req, res) {
       try {
-        const data = await nguoidungs.getById(req.user.id);
+        const data = await Nguoidung.getById(req.user.id);
         return res.status(200).json({ data: data });
       } catch (error) {
         return res.status(500).json({message: "Lỗi: " + error.message});
@@ -71,7 +71,7 @@ class nguoidungController {
   
     async getAllNguoiDung(req, res) {
       try {
-        const data = await nguoidungs.getAll();
+        const data = await Nguoidung.getAll();
         return res.status(200).json({ data: data });
       } catch (error) {
         return res.status(500).json(error.message);
@@ -80,7 +80,7 @@ class nguoidungController {
 
     async kiemTraNguoiDung(req, res) {
         try {
-            const data = await nguoidungs.getById(req.user.id);
+            const data = await Nguoidung.getById(req.user.id);
             return res.status(200).json({ status: true, data: data });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });

@@ -1,97 +1,92 @@
-const pool = require("../db");
-class nhanviens {
-    async add(id_san, ho_ten, email, hashed, so_dien_thoai, gioi_tinh) {
-        const data = await pool.query(
-            "INSERT INTO nhanviens(id_san, ho_ten ,email,mat_khau ,so_dien_thoai ,gioi_tinh) VALUES ($1,$2,$3,$4,$5,$6) RETURNING *",
-            [id_san, ho_ten, email, hashed, so_dien_thoai, gioi_tinh]
-        );
-        return data.rows[0];
+'use strict';
+const { Model } = require('sequelize');
+
+module.exports = (sequelize, DataTypes) => {
+  class Nhanvien extends Model {
+    static associate(models) {
+      Nhanvien.belongsTo(models.Santhethao, { foreignKey: 'id_san' });
     }
 
-    async update(
-        id,
-        id_san,
-        ho_ten,
-        email,
-        hashed,
-        so_dien_thoai,
-        gioi_tinh,
-        tinh_trang
-    ) {
-        const data = await pool.query(
-            'UPDATE nhanviens SET ho_ten = $1, mat_khau = $2, email = $3, so_dien_thoai = $4, gioi_tinh = $5, tinh_trang = $6, "updatedAt" = NOW(), id_san =$7 WHERE id = $8 RETURNING *',
-            [
-                ho_ten,
-                hashed,
-                email,
-                so_dien_thoai,
-                gioi_tinh,
-                tinh_trang,
-                id_san,
-                id,
-            ]
-        );
-        return data.rows[0];
+    static async add(id_san, ho_ten, email, hashed, so_dien_thoai, gioi_tinh) {
+      return await this.create({ id_san, ho_ten, email, mat_khau: hashed, so_dien_thoai, gioi_tinh });
     }
 
-    async updateOpen(id, ho_ten, so_dien_thoai, gioi_tinh, tinh_trang) {
-        const data = await pool.query(
-            'UPDATE nhanviens SET ho_ten = $1, so_dien_thoai = $2, gioi_tinh = $3, tinh_trang = $4, "updatedAt" = NOW() WHERE id = $5 RETURNING *',
-            [ho_ten, so_dien_thoai, gioi_tinh, tinh_trang, id]
-        );
-        return data.rows[0];
+    static async updateRecord(id, id_san, ho_ten, email, hashed, so_dien_thoai, gioi_tinh, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { id_san, ho_ten, mat_khau: hashed, email, so_dien_thoai, gioi_tinh, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
     }
 
-    async delete(id) {
-        const data = await pool.query(
-            "DELETE FROM nhanviens WHERE id = $1 RETURNING *",
-            [id]
-        );
-        return data.rows[0];
-    }
-    async changeMatKhau(id, hashed) {
-        await pool.query(
-            'UPDATE nhanviens SET mat_khau = $1, "updatedAt" = NOW() WHERE id = $2',
-            [hashed, id]
-        );
+    static async updateOpen(id, ho_ten, so_dien_thoai, gioi_tinh, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { ho_ten, so_dien_thoai, gioi_tinh, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
     }
 
-    async getAll() {
-        const nhanvien = await pool.query(
-            `SELECT nhanviens.*, santhethaos.ten_san, chusans.ho_ten as ho_ten_chu_san
-      FROM nhanviens 
-      JOIN santhethaos ON nhanviens.id_san = santhethaos.id
-      JOIN chusans ON chusans.id = santhethaos.id_chu_san`
-        );
-        return nhanvien.rows;
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
     }
 
-    async getByEmail(email) {
-        const data = await pool.query(
-            "SELECT * FROM nhanviens where email = $1",
-            [email]
-        );
-        return data;
+    static async changeMatKhau(id, hashed) {
+      return await this.update({ mat_khau: hashed }, { where: { id } });
     }
 
-    async getById(id) {
-        const data = await pool.query("SELECT * FROM nhanviens where id = $1", [
-            id,
-        ]);
-        return data.rows[0];
+    static async getAll() {
+      const query = `
+        SELECT nhanviens.*, santhethaos.ten_san, chusans.ho_ten as ho_ten_chu_san
+        FROM nhanviens 
+        JOIN santhethaos ON nhanviens.id_san = santhethaos.id
+        JOIN chusans ON chusans.id = santhethaos.id_chu_san
+      `;
+      return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
     }
 
-    async getByChuSan(id_chu_san) {
-        const nhanvien = await pool.query(
-            `SELECT nhanviens.*, santhethaos.ten_san
-      FROM nhanviens 
-      JOIN santhethaos ON nhanviens.id_san = santhethaos.id
-      JOIN chusans ON chusans.id = santhethaos.id_chu_san
-      WHERE chusans.id = $1 AND santhethaos.tinh_trang = true`,
-            [id_chu_san]
-        );
-        return nhanvien.rows;
+    static async getByEmail(email) {
+      const data = await this.findOne({ where: { email } });
+      return { rows: data ? [data] : [], rowCount: data ? 1 : 0 };
     }
-}
 
-module.exports = new nhanviens();
+    static async getById(id) {
+      return await this.findByPk(id);
+    }
+
+    static async getByChuSan(id_chu_san) {
+      const query = `
+        SELECT nhanviens.*, santhethaos.ten_san
+        FROM nhanviens 
+        JOIN santhethaos ON nhanviens.id_san = santhethaos.id
+        JOIN chusans ON chusans.id = santhethaos.id_chu_san
+        WHERE chusans.id = :id_chu_san AND santhethaos.tinh_trang = true
+      `;
+      return await sequelize.query(query, {
+        replacements: { id_chu_san },
+        type: sequelize.QueryTypes.SELECT
+      });
+    }
+  }
+
+  Nhanvien.init({
+    id_san: DataTypes.INTEGER,
+    ho_ten: DataTypes.STRING,
+    email: { type: DataTypes.STRING, unique: true },
+    mat_khau: DataTypes.STRING,
+    so_dien_thoai: { type: DataTypes.STRING, unique: true },
+    gioi_tinh: DataTypes.ENUM('Nam', 'Nữ', 'Khác'),
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Nhanvien',
+    tableName: 'nhanviens',
+    indexes: [
+      { unique: true, fields: ['email'], name: 'idx_nhanviens_email' },
+      { fields: ['id_san'], name: 'idx_nhanviens_san' }
+    ]
+  });
+  return Nhanvien;
+};

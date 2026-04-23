@@ -1,7 +1,7 @@
-const sukiens = require("../models/sukiens");
-const nguoidungdungsukiens = require("../models/nguoidungsukiens");
-const datsans = require("../models/datsans");
-const vitrisans = require("../models/vitrisans");
+const {Sukien} = require("../models");
+const {Nguoidungsukien} = require("../models");
+const {Datsan} = require("../models");
+const {Vitrisan} = require("../models");
 const PayOS = require("@payos/node");
 const payos = new PayOS(process.env.CLIENT_ID, process.env.API_KEY, process.env.CHECKSUM_KEY);
 const { v4: uuidv4 } = require("uuid");
@@ -34,14 +34,14 @@ class sukienController {
                 ngay.push(`${yyyy}-${mm}-${dd}`);
                 ngay_bat_dau.setDate(ngay_bat_dau.getDate() + 1);
             }
-            const vitrisan = await vitrisans.getAllOpenSanId(id_san);
+            const vitrisan = await Vitrisan.getAllOpenSanId(id_san);
             vitrisan.map((vts) => console.log(vts.id));
             let vts = [];
 
             console.log(gio);
             await Promise.all(
                 ngay.map(async (n) => {
-                    const giodat = await datsans.layGioDat(n);
+                    const giodat = await Datsan.layGioDat(n);
                     giodat.map((nd) => {
                         const date = new Date(nd.ngay_dat);
                         date.setDate(date.getDate() + 1);
@@ -64,7 +64,7 @@ class sukienController {
                 }),
             );
             console.log(vts);
-            const gia_san = await datsans.layGiaSan(1);
+            const gia_san = await Datsan.layGiaSan(1);
             for (const ngay_dat of ngay) {
                 await Promise.all(
                     gio.map((gio_dat) =>
@@ -72,15 +72,15 @@ class sukienController {
                             const id = parseInt(v.split("T")[0]);
                             const nd = v.split("T")[1];
                             if (ngay_dat === nd) {
-                                datsans.add(id + 1, null, nd, gio_dat, gia_san.gia_san, orderCode);
+                                Datsan.add(id + 1, null, nd, gio_dat, gia_san.gia_san, orderCode);
                             } else {
-                                datsans.add(1, null, ngay_dat, gio_dat, gia_san.gia_san, orderCode);
+                                Datsan.add(1, null, ngay_dat, gio_dat, gia_san.gia_san, orderCode);
                             }
                         }),
                     ),
                 );
             }
-            const data = await sukiens.add(
+            const data = await Sukien.add(
                 id_san,
                 ten_su_kien,
                 noi_dung,
@@ -99,7 +99,7 @@ class sukienController {
         try {
             const { id, id_san, ten_su_kien, noi_dung, thoi_gian_bat_dau, thoi_gian_ket_thuc, so_luong, tinh_trang } =
                 req.body;
-            const data = await sukiens.update(
+            const data = await Sukien.update(
                 id,
                 id_san,
                 ten_su_kien,
@@ -119,11 +119,11 @@ class sukienController {
             const { id_su_kien, can_cuoc_cong_dan, phi_tham_gia, so_luong } = req.body;
             const expiredAt = Math.floor(Date.now() / 1000) + 30;
             const orderCode = this.generateNumericOrderCode();
-            const checkSoLuong = await nguoidungdungsukiens.checkSoLuong(id_su_kien);
+            const checkSoLuong = await Nguoidungsukien.checkSoLuong(id_su_kien);
             if (checkSoLuong >= so_luong) {
                 return res.status(500).json({ checkSoLuong });
             }
-            const data = await nguoidungdungsukiens.add(req.user.id, id_su_kien, can_cuoc_cong_dan, orderCode);
+            const data = await Nguoidungsukien.add(req.user.id, id_su_kien, can_cuoc_cong_dan, orderCode);
             const order = {
                 amount: phi_tham_gia,
                 description: `${orderCode}`,
@@ -135,7 +135,7 @@ class sukienController {
             const paymentLink = await payos.createPaymentLink(order);
             setTimeout(async () => {
                 try {
-                    await nguoidungdungsukiens.delete(orderCode);
+                    await Nguoidungsukien.delete(orderCode);
                     console.log("Đã tự động hủy đơn:", orderCode);
                 } catch (err) {
                     console.error("Lỗi khi xóa đơn:", err.message);
@@ -153,11 +153,11 @@ class sukienController {
             console.log(cancel, status, code, id, orderCode);
             if (cancel === "true" || status === "CANCELLED") {
                 console.log("Thanh toán đã bị hủy");
-                const data = await nguoidungdungsukiens.delete(orderCode);
+                const data = await Nguoidungsukien.delete(orderCode);
                 return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/su-kien`);
             }
             console.log("Thanh toán thành công");
-            const data = await nguoidungdungsukiens.update(orderCode);
+            const data = await Nguoidungsukien.update(orderCode);
             return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/su-kien`);
         } catch (error) {
             console.error("Lỗi khi xử lý thanh toán:", error.message);
@@ -171,7 +171,7 @@ class sukienController {
     async xoaSuKien(req, res) {
         try {
             const id = req.params.id;
-            await sukiens.delete(id);
+            await Sukien.delete(id);
             return res.status(200).json({ message: "Xóa thành công" });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -180,7 +180,7 @@ class sukienController {
 
     async getAll(req, res) {
         try {
-            const data = await sukiens.getAll(req.user.id);
+            const data = await Sukien.getAll(req.user.id);
             return res.status(200).json({ message: "Lấy dữ liệu thành công", data: data });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -189,8 +189,8 @@ class sukienController {
 
     async getAllOpen(req, res) {
         try {
-            const data = await sukiens.getAllOpen();
-            const sukien = await sukiens.checkThamGia(req.user.id);
+            const data = await Sukien.getAllOpen();
+            const sukien = await Sukien.checkThamGia(req.user.id);
             return res.status(200).json({ message: "Lấy dữ liệu thành công", data, sukien });
         } catch (error) {
             console.log(error);

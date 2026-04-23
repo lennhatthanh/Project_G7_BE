@@ -1,4 +1,4 @@
-const thongbao = require("../models/thongbaos");
+const {Thongbao} = require("../models");
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
@@ -11,7 +11,7 @@ const transporter = nodemailer.createTransport({
 class thongbaoController {
   async layThongBao(req, res) {
     try {
-      const data = await thongbao.getAll(req.user.id);
+      const data = await Thongbao.getAll(req.user.id);
       res.json({ message: "Lấy danh sách thành công", data: data });
     } catch (error) {
       console.error(error);
@@ -21,7 +21,7 @@ class thongbaoController {
 
   async layThongBaoOpen(req, res) {
     try {
-      const data = await thongbao.getAllOpen();
+      const data = await Thongbao.getAllOpen();
       res.json({ message: "Lấy danh sách thành công", data: data });
     } catch (error) {
       console.error(error);
@@ -32,7 +32,7 @@ class thongbaoController {
   async themThongBao(req, res) {
     try {
       const { id_san, tieu_de, noi_dung } = req.body;
-      const data = await thongbao.add(id_san, tieu_de, noi_dung);
+      const data = await Thongbao.add(id_san, tieu_de, noi_dung);
       return res.status(200).json({
         message: "Thêm mới thành công",
         data: data,
@@ -48,7 +48,7 @@ class thongbaoController {
   async capNhatThongBao(req, res) {
     try {
       const { id, tieu_de, noi_dung, tinh_trang, id_san } = req.body;
-      const data = await thongbao.update(
+      const data = await Thongbao.update(
         id,
         tieu_de,
         noi_dung,
@@ -65,7 +65,7 @@ class thongbaoController {
   async xoaThongBao(req, res) {
     try {
       const id = req.params.id;
-      const data = await thongbao.delete(id);
+      const data = await Thongbao.delete(id);
       return res.json({ message: "Xóa thành công", data: data });
     } catch (error) {
       console.error(error);
@@ -75,7 +75,7 @@ class thongbaoController {
   async guiThongBao(req, res) {
     try {
       const { id_san, noi_dung, tieu_de } = req.body;
-      const data = await thongbao.layEmail(id_san);
+      const data = await Thongbao.layEmail(id_san);
       data.forEach((element) => {
         transporter.sendMail({
           from: '"SanGo" <your_email@gmail.com>',

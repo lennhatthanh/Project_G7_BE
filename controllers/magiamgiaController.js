@@ -1,4 +1,4 @@
-const magiamgia = require("../models/magiamgias");
+const {Magiamgia} = require("../models");
 
 class magiamgiaController {
     async themMaGiamGia(req, res) {
@@ -13,7 +13,7 @@ class magiamgiaController {
                 ngay_ket_thuc,
             } = req.body;
 
-            const data = await magiamgia.add(
+            const data = await Magiamgia.add(
                 id_san,
                 ma_giam_gia,
                 gia_tri_giam,
@@ -47,7 +47,7 @@ class magiamgiaController {
                 id,
             } = req.body;
 
-            const data = await magiamgia.update(
+            const data = await Magiamgia.update(
                 ma_giam_gia,
                 gia_tri_giam,
                 mo_ta,
@@ -72,7 +72,7 @@ class magiamgiaController {
     async xoaMaGiamGia(req, res) {
         try {
             const id = req.params.id;
-            await magiamgia.delete(id);
+            await Magiamgia.delete(id);
             return res
                 .status(200)
                 .json({ message: "Xóa mã giảm giá thành công" });
@@ -86,7 +86,7 @@ class magiamgiaController {
     async layTatCa(req, res) {
         try {
             const id = req.user.id;
-            const data = await magiamgia.getAll(id);
+            const data = await Magiamgia.getAll(id);
             return res.status(200).json({ data: data });
         } catch (error) {
             console.error(error);
@@ -96,7 +96,7 @@ class magiamgiaController {
 
     async layTatCaDangMo(req, res) {
         try {
-            const data = await magiamgia.getAllOpen();
+            const data = await Magiamgia.getAllOpen();
             return res.status(200).json(data);
         } catch (error) {
             console.error(error);
@@ -107,7 +107,7 @@ class magiamgiaController {
     }
     async kiemTraMa(req, res) {
         try {
-            const data = await magiamgia.kiemTraMa(req.body.magiamgia, req.body.id_san);
+            const data = await Magiamgia.kiemTraMa(req.body.magiamgia, req.body.id_san);
             return res.status(200).json({data: data});
         } catch (error) {
             console.error(error);

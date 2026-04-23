@@ -1,5 +1,5 @@
 const pool = require("../db");
-const nhanviens = require("../models/nhanviens");
+const {Nhanvien} = require("../models");
 const bcrypt = require("bcrypt");
 
 class nhanvienController {
@@ -23,7 +23,7 @@ class nhanvienController {
             }
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau, salt);
-            const data = await nhanviens.add(
+            const data = await Nhanvien.add(
                 id_san,
                 ho_ten,
                 email,
@@ -36,12 +36,12 @@ class nhanvienController {
                 .json({ message: "Đăng ký thành công", data: data });
         } catch (error) {
             if (error.code == 23505) {
-                if (error.constraint === "nhanviens_email_key") {
+                if (error.constraint === "Nhanvien_email_key") {
                     return res
                         .status(402)
                         .json({ message: "Email đã tồn tại" });
                 }
-                if (error.constraint === "nhanviens_so_dien_thoai_key") {
+                if (error.constraint === "Nhanvien_so_dien_thoai_key") {
                     return res
                         .status(402)
                         .json({ message: "Số điện thoại đã tồn tại" });
@@ -70,7 +70,7 @@ class nhanvienController {
             } = req.body;
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau, salt);
-            const data = await nhanviens.update(
+            const data = await Nhanvien.update(
                 id,
                 id_san,
                 ho_ten,
@@ -91,7 +91,7 @@ class nhanvienController {
     async capNhatNhanVienOpen(req, res) {
         try {
             const { ho_ten, so_dien_thoai, gioi_tinh, tinh_trang } = req.body;
-            const data = await nhanviens.updateOpen(
+            const data = await Nhanvien.updateOpen(
                 req.user.id,
                 ho_ten,
                 so_dien_thoai,
@@ -109,7 +109,7 @@ class nhanvienController {
     async xoaNhanVien(req, res) {
         try {
             const id = req.params.id;
-            const data = await nhanviens.delete(id);
+            const data = await Nhanvien.delete(id);
             return res
                 .status(200)
                 .json({ message: "Xóa thành công", data: data });
@@ -126,7 +126,7 @@ class nhanvienController {
                     .status(400)
                     .json({ message: "Mật khẩu cũ không trùng khớp" });
             }
-            const nhanvien = await nhanviens.getById(req.user.id);
+            const nhanvien = await Nhanvien.getById(req.user.id);
             const validPassword = await bcrypt.compare(
                 mat_khau_cu1,
                 nhanvien.mat_khau
@@ -144,7 +144,7 @@ class nhanvienController {
             }
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau_moi, salt);
-            await nhanviens.changeMatKhau(req.user.id, hashed);
+            await Nhanvien.changeMatKhau(req.user.id, hashed);
             return res.status(200).json({ message: "Đổi mật khẩu thành công" });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -153,7 +153,7 @@ class nhanvienController {
 
     async getNhanVien(req, res) {
         try {
-            const data = await nhanviens.getById(req.user.id);
+            const data = await Nhanvien.getById(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -162,7 +162,7 @@ class nhanvienController {
 
     async getAllNhanVien(req, res) {
         try {
-            const data = await nhanviens.getAll();
+            const data = await Nhanvien.getAll();
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -171,7 +171,7 @@ class nhanvienController {
 
     async getAllByChuSan(req, res) {
         try {
-            const data = await nhanviens.getByChuSan(req.user.id);
+            const data = await Nhanvien.getByChuSan(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });

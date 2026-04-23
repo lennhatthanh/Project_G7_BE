@@ -1,4 +1,4 @@
-const chusans = require("../models/chusans");
+const {Chusan} = require("../models");
 const bcrypt = require("bcrypt");
 
 class chusanController {
@@ -16,7 +16,7 @@ class chusanController {
             }
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau, salt);
-            const data = await chusans.add(
+            const data = await Chusan.add(
                 ho_ten,
                 email,
                 hashed,
@@ -28,12 +28,12 @@ class chusanController {
                 .json({ message: "Đăng ký thành công", data: data });
         } catch (error) {
             if (error.code == 23505) {
-                if (error.constraint === "chusans_email_key") {
+                if (error.constraint === "Chusan_email_key") {
                     return res
                         .status(402)
                         .json({ message: "Email đã tồn tại" });
                 }
-                if (error.constraint === "chusans_so_dien_thoai_key") {
+                if (error.constraint === "Chusan_so_dien_thoai_key") {
                     return res
                         .status(402)
                         .json({ message: "Số điện thoại đã tồn tại" });
@@ -61,7 +61,7 @@ class chusanController {
             } = req.body;
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau, salt);
-            const data = await chusans.update(
+            const data = await Chusan.update(
                 id,
                 ho_ten,
                 email,
@@ -82,7 +82,7 @@ class chusanController {
         try {
             const { id, ho_ten, so_dien_thoai, gioi_tinh, tinh_trang } =
                 req.body;
-            const data = await chusans.updateOpen(
+            const data = await Chusan.updateOpen(
                 id,
                 ho_ten,
                 so_dien_thoai,
@@ -100,7 +100,7 @@ class chusanController {
     async xoaChuSan(req, res) {
         try {
             const id = req.params.id;
-            const data = await chusans.delete(id);
+            const data = await Chusan.delete(id);
             return res
                 .status(200)
                 .json({ message: "Xóa thành công", data: data });
@@ -117,7 +117,7 @@ class chusanController {
                     .status(400)
                     .json({ message: "Mật khẩu cũ không trùng khớp" });
             }
-            const chusan = await chusans.getById(req.user.id);
+            const chusan = await Chusan.getById(req.user.id);
             const validPassword = await bcrypt.compare(
                 mat_khau_cu1,
                 chusan.mat_khau
@@ -135,7 +135,7 @@ class chusanController {
             }
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau_moi, salt);
-            await chusans.changeMatKhau(req.user.id, hashed);
+            await Chusan.changeMatKhau(req.user.id, hashed);
             return res.status(200).json({ message: "Đổi mật khẩu thành công" });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -144,7 +144,7 @@ class chusanController {
 
     async getChuSan(req, res) {
         try {
-            const data = await chusans.getById(req.user.id);
+            const data = await Chusan.getById(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -153,7 +153,7 @@ class chusanController {
 
     async getAllChuSan(req, res) {
         try {
-            const data = await chusans.getAll();
+            const data = await Chusan.getAll();
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json(error.message);

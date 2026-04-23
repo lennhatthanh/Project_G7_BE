@@ -1,41 +1,47 @@
-const pool = require("../db");
+'use strict';
+const { Model } = require('sequelize');
 
-class MonChoi {
-  async add(ten_mon, mo_ta) {
-    const data = await pool.query(
-      "INSERT INTO monchois(ten_mon, mo_ta) VALUES ($1, $2) RETURNING *",
-      [ten_mon, mo_ta]
-    );
-    return data.rows[0];
+module.exports = (sequelize, DataTypes) => {
+  class Monchoi extends Model {
+    static associate(models) {
+      Monchoi.hasMany(models.Vitrisan, { foreignKey: 'id_mon_choi' });
+    }
+
+    static async add(ten_mon, mo_ta) {
+      return await this.create({ ten_mon, mo_ta });
+    }
+
+    static async updateRecord(id, ten_mon, mo_ta, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { ten_mon, mo_ta, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
+    }
+
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
+    }
+
+    static async getAll() {
+      return await this.findAll();
+    }
+
+    static async getAllOpen() {
+      return await this.findAll({ where: { tinh_trang: true } });
+    }
   }
 
-  async update(id, ten_mon, mo_ta, tinh_trang) {
-    const data = await pool.query(
-      'UPDATE monchois SET ten_mon = $1, mo_ta = $2, tinh_trang = $3, "updatedAt" = NOW() WHERE id = $4 RETURNING *',
-      [ten_mon, mo_ta, tinh_trang, id]
-    );
-    return data.rows[0];
-  }
-
-  async delete(id) {
-    const data = await pool.query(
-      "DELETE FROM monchois WHERE id = $1 RETURNING *",
-      [id]
-    );
-    return data.rows[0];
-  }
-
-  async getAll() {
-    const data = await pool.query("SELECT * FROM monchois");
-    return data.rows;
-  }
-
-  async getAllOpen() {
-    const data = await pool.query(
-      "SELECT * FROM monchois WHERE tinh_trang = true"
-    );
-    return data.rows;
-  }
-}
-
-module.exports = new MonChoi();
+  Monchoi.init({
+    ten_mon: DataTypes.STRING,
+    mo_ta: DataTypes.STRING,
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Monchoi',
+    tableName: 'monchois'
+  });
+  return Monchoi;
+};

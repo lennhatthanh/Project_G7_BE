@@ -1,6 +1,6 @@
 require("dotenv").config();
-const datsans = require("../models/datsans");
-const nguoidungs = require("../models/nguoidungs");
+const {Datsan} = require("../models");
+const {Nguoidung} = require("../models");
 const PayOS = require("@payos/node");
 const payos = new PayOS(process.env.CLIENT_ID, process.env.API_KEY, process.env.CHECKSUM_KEY);
 
@@ -28,7 +28,7 @@ class datsanController {
             for (const ds of danhSach) {
                 await Promise.all(
                     ds.gio_dat.map((gio) =>
-                        datsans.add(
+                        Datsan.add(
                             ds.id_vi_tri_dat_san,
                             id_nguoi_dung,
                             ds.ngay_dat,
@@ -51,7 +51,7 @@ class datsanController {
             const paymentLink = await payos.createPaymentLink(order);
             setTimeout(async () => {
                 try {
-                    await datsans.delete(orderCode);
+                    await Datsan.delete(orderCode);
                     console.log("Đã tự động hủy đơn:", orderCode);
                 } catch (err) {
                     console.error("Lỗi khi xóa đơn:", err.message);
@@ -71,11 +71,11 @@ class datsanController {
             console.log(cancel, status, code, id, orderCode);
             if (cancel === "true" || status === "CANCELLED") {
                 console.log("Thanh toán đã bị hủy");
-                const data = await datsans.delete(orderCode);
+                const data = await Datsan.delete(orderCode);
                 return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/dat-san/${id_san}`);
             }
             console.log("Thanh toán thành công");
-            const data = await datsans.update(orderCode);
+            const data = await Datsan.update(orderCode);
             return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/dat-san/${id_san}`);
         } catch (error) {
             console.error("Lỗi khi xử lý thanh toán:", error.message);
@@ -87,7 +87,7 @@ class datsanController {
     }
     async lichSuDatSan(req, res) {
         try {
-            const data = await datsans.getLichSu(req.user.id);
+            const data = await Datsan.getLichSu(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json(error.message);
@@ -95,7 +95,7 @@ class datsanController {
     }
     async lichSuDatSanAll(req, res) {
         try {
-            const data = await datsans.getLichSuNhanVien(req.user.id);
+            const data = await Datsan.getLichSuNhanVien(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json(error.message);
@@ -103,7 +103,7 @@ class datsanController {
     }
     async lichSuDatSanAllChuSan(req, res) {
         try {
-            const data = await datsans.getLichSuChuSan(req.user.id);
+            const data = await Datsan.getLichSuChuSan(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             return res.status(500).json(error.message);

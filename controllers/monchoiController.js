@@ -1,10 +1,10 @@
-const monchoi = require("../models/monchoi");
+const {Monchoi} = require("../models");
 
 class MonChoiController {
   async themMonChoi(req, res) {
     try {
       const { ten_mon, mo_ta } = req.body;
-      const data = await monchoi.add(ten_mon, mo_ta); // chỉ gọi 1 lần
+      const data = await Monchoi.add(ten_mon, mo_ta); // chỉ gọi 1 lần
       return res.status(200).json({
         message: "Thêm dữ liệu thành công",
         data: data,
@@ -17,7 +17,7 @@ class MonChoiController {
   async capnhatMonChoi(req, res) {
     try {
       const { id, ten_mon, mo_ta, tinh_trang } = req.body;
-      const data = await monchoi.update(id, ten_mon, mo_ta, tinh_trang);
+      const data = await Monchoi.update(id, ten_mon, mo_ta, tinh_trang);
       return res.status(200).json({
         message: "Cập nhật thành công",
         data: data,
@@ -31,7 +31,7 @@ class MonChoiController {
   async xoaMonChoi(req, res) {
     try {
       const id  = req.params.id
-      await monchoi.delete(id);
+      await Monchoi.delete(id);
 
       return res.status(200).json({
         message: "Xóa thành công",
@@ -43,7 +43,7 @@ class MonChoiController {
 
   async layTatCaMonChoi(req, res) {
     try {
-      const data = await monchoi.getAll();
+      const data = await Monchoi.getAll();
       return res.status(200).json({
         message: "Lấy dữ liệu thành công",
         data: data,
@@ -55,7 +55,7 @@ class MonChoiController {
 
    async layTatCaMonChoiOpen(req, res) {
     try {
-      const data = await monchoi.getAllOpen();
+      const data = await Monchoi.getAllOpen();
       return res.status(200).json({
         message: "Lấy dữ liệu thành công",
         data: data,

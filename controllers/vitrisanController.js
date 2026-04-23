@@ -1,4 +1,4 @@
-const vitrisan = require("../models/vitrisans");
+const {Vitrisan} = require("../models");
 
 class ViTriSanController {
   async themViTriSan(req, res) {
@@ -12,7 +12,7 @@ class ViTriSanController {
         tinh_trang = true,
       } = req.body;
 
-      const data = await vitrisan.add(
+      const data = await Vitrisan.add(
         id_san,
         id_mon_choi,
         so_san,
@@ -35,7 +35,7 @@ class ViTriSanController {
       const { id, id_san, id_mon_choi, so_san, gia_san, mo_ta, tinh_trang } =
         req.body;
 
-      const data = await vitrisan.update(
+      const data = await Vitrisan.update(
         id,
         id_san,
         id_mon_choi,
@@ -58,7 +58,7 @@ class ViTriSanController {
   async xoaViTriSan(req, res) {
     try {
       const id  = req.params.id
-      const data = await vitrisan.delete(id);
+      const data = await Vitrisan.delete(id);
       return res.status(200).json({
         message: "Xóa thành công",
         data: data,
@@ -84,7 +84,7 @@ class ViTriSanController {
   async laySanTheoChuSan(req, res) {
     try {
       const id_chu_san = req.user.id;
-      const data = await vitrisan.getByChuSanId(id_chu_san);
+      const data = await Vitrisan.getByChuSanId(id_chu_san);
       return res.status(200).json({ data: data });
     } catch (error) {
       console.error(error);
@@ -94,7 +94,7 @@ class ViTriSanController {
   async laySanTheoNhanVien(req, res) {
     try {
       const id_nhan_vien = req.user.id;
-      const data = await vitrisan.getByNhanVienId(id_nhan_vien);
+      const data = await Vitrisan.getByNhanVienId(id_nhan_vien);
       return res.status(200).json({ data: data });
     } catch (error) {
       console.error(error);
