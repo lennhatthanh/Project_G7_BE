@@ -1,0 +1,176 @@
+const sans = require("../models/santhethaos");
+const icons = {
+    "Bóng đá": "icon/bong_da.png", // icon hình quả bóng đá
+    "Bóng chuyền": "volleyball.png", // icon hình bóng chuyền
+    "Cầu lông": "icon/cau_long.png", // icon hình vợt cầu lông
+    Tennis: "tennis-icon.png", // icon hình vợt tennis
+    "Bóng rổ": "icon/bong_ro.png", // icon hình bóng rổ
+    // Thêm các loại sân khác nếu cần
+};
+class SansController {
+    async themSan(req, res) {
+        try {
+            const {
+                ten_san,
+                loai_san,
+                huyen,
+                thanh_pho,
+                dia_chi_cu_the,
+                mo_ta,
+                gio_mo_cua,
+                gio_dong_cua,
+                kinh_do,
+                vi_do,
+            } = req.body;
+            const id_chu_san = req.user.id;
+
+            // Lấy icon dựa vào loại sân
+            const icon = icons[loai_san] || "default-icon.png"; // Nếu không tìm thấy, sử dụng icon mặc định
+
+            const hinh_anh = req.file?.filename || null;
+
+            const data = await sans.add(
+                id_chu_san,
+                ten_san,
+                loai_san,
+                icon, // Gửi icon đã được xác định ở trên
+                huyen,
+                thanh_pho,
+                dia_chi_cu_the,
+                mo_ta,
+                hinh_anh,
+                gio_mo_cua,
+                gio_dong_cua,
+                kinh_do,
+                vi_do
+            );
+
+            return res.status(200).json({
+                message: "Thêm sân thành công",
+                data: data,
+            });
+        } catch (error) {
+            return res.status(500).json({ message: error.message });
+        }
+    }
+    async capnhatSan(req, res) {
+        try {
+            const {
+                id,
+                id_chu_san,
+                ten_san,
+                loai_san,
+                icon,
+                huyen,
+                thanh_pho,
+                dia_chi_cu_the,
+                mo_ta,
+                gio_mo_cua,
+                gio_dong_cua,
+                kinh_do,
+                vi_do,
+                tinh_trang,
+            } = req.body;
+
+            const hinh_anh = req.file?.filename;
+
+            const data = await sans.update(
+                id,
+                id_chu_san,
+                ten_san,
+                loai_san,
+                icon,
+                huyen,
+                thanh_pho,
+                dia_chi_cu_the,
+                mo_ta,
+                hinh_anh,
+                gio_mo_cua,
+                gio_dong_cua,
+                kinh_do,
+                vi_do,
+                tinh_trang
+            );
+
+            return res.status(200).json({
+                message: "Cập nhật sân thành công",
+                data: data,
+            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Cập nhật sân thất bại" });
+        }
+    }
+
+    async xoaSan(req, res) {
+        try {
+            const id = req.params.id;
+            await sans.delete(id);
+
+            return res.status(200).json({
+                message: "Xóa sân thành công",
+            });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Xóa sân thất bại" });
+        }
+    }
+
+    async layTatCaSan(req, res) {
+        try {
+            const data = await sans.getAll();
+            return res.status(200).json({
+                message: "Lấy danh sách sân thành công",
+                data: data,
+            });
+        } catch (error) {
+            console.error(error);
+            return res
+                .status(500)
+                .json({ message: "Lỗi khi lấy danh sách sân" });
+        }
+    }
+    async laySanTheoChuSan(req, res) {
+        try {
+            const data = await sans.getAllByChuSan(req.user.id);
+            return res.status(200).json({ data: data });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi server" });
+        }
+    }
+    async laySanTheoChuSanOpen(req, res) {
+        try {
+            const data = await sans.getAllByChuSanOpen(req.user.id);
+            return res.status(200).json({ data: data });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi server" });
+        }
+    }
+    async laySanTheoId(req, res) {
+        try {
+            const id = req.params.id;
+            const data = await sans.getById(id);
+            const datavitrisan = await sans.getDataById(id);
+            return res
+                .status(200)
+                .json({ data: data, datavitrisan: datavitrisan });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi server" });
+        }
+    }
+
+    async laySanOpen(req, res) {
+        try {
+            const data = await sans.getAllOpen();
+            return res.status(200).json({ data: data });
+        } catch (error) {
+            console.error(error);
+            return res.status(500).json({ message: "Lỗi server" });
+        }
+    }
+}
+
+module.exports = new SansController();

@@ -1,0 +1,5 @@
+/node_modules
+backup.sql
+docker-compose.yml
+Dockerfile
+.env

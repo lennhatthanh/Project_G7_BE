@@ -1,0 +1,11 @@
+const express =require('express');
+const router=express.Router();
+const vitrisan=require('../controllers/vitrisanController');
+const authMiddleware = require('../middleware/authMiddleware');
+router.post('/them-vi-tri-san',authMiddleware.verifyToken,vitrisan.themViTriSan);
+router.put('/cap-nhat-vi-tri-san',vitrisan.capnhatViTriSan);
+router.delete('/xoa-vi-tri-san/:id',vitrisan.xoaViTriSan);
+router.get('/lay-tat-ca',vitrisan.layTatCaViTriSan);
+router.get('/lay-vi-tri-san-chu-san',authMiddleware.verifyToken,vitrisan.laySanTheoChuSan);
+router.get('/lay-vi-tri-san-nhan-vien',authMiddleware.verifyToken,vitrisan.laySanTheoNhanVien);
+module.exports=router;
