@@ -3,9 +3,12 @@ const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client
 const client = new SecretsManagerClient({
     region: "us-west-2",
 });
+
 let cachedConfig = null;
+
 async function getDBConfig() {
     if (cachedConfig) return cachedConfig;
+
     const command = new GetSecretValueCommand({
         SecretId: "qlsan/dev/db",
     });
@@ -16,7 +19,9 @@ async function getDBConfig() {
         throw new Error("Secret empty");
     }
 
-    return JSON.parse(response.SecretString);
+    cachedConfig = JSON.parse(response.SecretString);
+
+    return cachedConfig;
 }
 
 module.exports = getDBConfig;
