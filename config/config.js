@@ -10,7 +10,8 @@ const sslConfig = {
 
 module.exports = async () => {
     const config = await getDBConfig();
-
+    console.log(config);
+    
     return {
         development: {
             host: config.host,
