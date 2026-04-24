@@ -9,6 +9,7 @@ const icons = {
 };
 class SansController {
     async themSan(req, res) {
+        
         try {
             const {
                 ten_san,
@@ -44,7 +45,9 @@ class SansController {
                 kinh_do,
                 vi_do,
             );
-
+            
+        console.log("DEBUG: req.file =", req.file);
+        console.log("DEBUG: req.body =", req.body);
             return res.status(200).json({
                 message: "Thêm sân thành công",
                 data: data,
