@@ -1,17 +1,19 @@
 const { Pool } = require("pg");
-require("dotenv").config();
+const getSecret = require("./services/secret");
 
 let pool;
 
-const init = () => {
+const init = async () => {
     if (pool) return pool;
 
+    const secret = await getSecret();
+
     pool = new Pool({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT,
+        host: secret.host,
+        user: secret.username,
+        password: secret.password,
+        database: secret.dbname,
+        port: secret.port,
         ssl: {
             rejectUnauthorized: false,
         },
@@ -22,7 +24,7 @@ const init = () => {
 
 module.exports = {
     query: async (...args) => {
-        const p = init();
+        const p = await init();
         return p.query(...args);
     },
 };

@@ -1,27 +1,20 @@
 const { SecretsManagerClient, GetSecretValueCommand } = require("@aws-sdk/client-secrets-manager");
 
-const client = new SecretsManagerClient({
-    region: "us-west-2",
-});
+const client = new SecretsManagerClient({ region: "us-west-2" });
 
-let cachedConfig = null;
+let cachedSecret = null;
 
-async function getDBConfig() {
-    if (cachedConfig) return cachedConfig;
+const getSecret = async (secretId = "qlsan/thanh/db") => {
+    if (cachedSecret) return cachedSecret;
 
     const command = new GetSecretValueCommand({
-        SecretId: "qlsan/dev/db",
+        SecretId: secretId,
     });
 
-    const response = await client.send(command);
+    const data = await client.send(command);
+    cachedSecret = JSON.parse(data.SecretString);
 
-    if (!response.SecretString) {
-        throw new Error("Secret empty");
-    }
+    return cachedSecret;
+};
 
-    cachedConfig = JSON.parse(response.SecretString);
-
-    return cachedConfig;
-}
-
-module.exports = getDBConfig;
+module.exports = getSecret;
