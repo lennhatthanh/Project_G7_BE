@@ -27,7 +27,7 @@ class SansController {
             // Lấy icon dựa vào loại sân
             const icon = icons[loai_san] || "default-icon.png"; // Nếu không tìm thấy, sử dụng icon mặc định
 
-            const hinh_anh = req.file?.filename || null;
+            const hinh_anh = req.file?.key || req.file?.location || null;
 
             const data = await Santhethao.add(
                 id_chu_san,
@@ -72,7 +72,7 @@ class SansController {
                 tinh_trang,
             } = req.body;
 
-            const hinh_anh = req.file?.filename;
+            const hinh_anh = req.file?.key || req.file?.location;
 
             const data = await Santhethao.update(
                 id,
