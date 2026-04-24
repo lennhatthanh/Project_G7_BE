@@ -1,24 +1,35 @@
 require("dotenv").config();
+const fs = require("fs");
 
-module.exports = {
-    development: {
-        username: process.env.DB_USERNAME,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        host: process.env.DB_HOST || "127.0.0.1",
-        port: process.env.DB_PORT || 5432,
-        dialect: process.env.DB_DIALECT || "postgres",
-    },
-    production: {
-        username: process.env.PROD_DB_USERNAME,
-        password: process.env.PROD_DB_PASSWORD,
-        database: process.env.PROD_DB_NAME,
-        host: process.env.PROD_DB_HOST,
-        port: process.env.PROD_DB_PORT,
-        dialect: "postgres",
-        dialectOptions: {
-            // Bạn có thể cần SSL cho môi trường production
-            // ssl: { require: true, rejectUnauthorized: false }
+const sslConfig = {
+    require: true,
+    rejectUnauthorized: false,
+    ca: fs.readFileSync("./global-bundle.pem").toString(),
+};
+
+module.exports = () => {
+    return {
+        development: {
+            host: process.env.DB_HOST,
+            username: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT,
+            dialect: process.env.DB_DIALECT || "postgres",
+            dialectOptions: {
+                ssl: sslConfig,
+            },
         },
-    },
+        production: {
+            host: process.env.DB_HOST,
+            username: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT,
+            dialect: process.env.DB_DIALECT || "postgres",
+            dialectOptions: {
+                ssl: sslConfig,
+            },
+        },
+    };
 };
