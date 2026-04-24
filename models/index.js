@@ -5,7 +5,7 @@ const path = require('path');
 const Sequelize = require('sequelize');
 const process = require('process');
 const basename = path.basename(__filename);
-const env = process.env.NODE_ENV || 'development';
+const env = 'development';
 
 // Đường dẫn tới file config của bạn
 // Đảm bảo file config/config.js có thông tin DB PostgreSQL của bạn
