@@ -20,7 +20,7 @@ module.exports = async () => {
             port: config.port,
             dialect: process.env.DB_DIALECT || "postgres",
             dialectOptions: {
-                ssl: sslConfig,
+                
             },
         },
         production: {
@@ -31,7 +31,7 @@ module.exports = async () => {
             port: config.port,
             dialect: process.env.DB_DIALECT || "postgres",
             dialectOptions: {
-                ssl: sslConfig,
+                
             },
         },
     };
