@@ -21,7 +21,6 @@ const upload = multer({
   })
 });
 
-const upload = multer({ storage });
 router.post('/them-san', authMiddleware.verifyToken, upload.single('hinh_anh'), vitrisan.themSan);
 router.put('/cap-nhat-san', authMiddleware.verifyToken, upload.single('hinh_anh'), vitrisan.capnhatSan);
 router.delete('/xoa-san/:id', vitrisan.xoaSan);
