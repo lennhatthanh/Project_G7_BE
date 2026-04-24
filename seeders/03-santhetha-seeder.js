@@ -42,8 +42,8 @@ module.exports = {
         gio_dong_cua: '23:00:00',
 
         // ✅ CHUẨN HOÁ
-        vi_do: gps.longitude,   // longitude
-        kinh_do: gps.latitude,  // latitude
+        vi_do: gps.latitude,   // longitude
+        kinh_do: gps.longitude,  // latitude
 
         tinh_trang: true,
         createdAt: new Date(),
