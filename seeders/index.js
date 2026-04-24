@@ -1,206 +1,126 @@
 /**
- * Main Seeder Orchestrator
- * 
- * This script runs all seeders in the correct dependency order.
- * It handles:
- * - Truncating tables before seeding
- * - Sequential execution of seeders
- * - Batch processing for large datasets
- * - Error handling and progress tracking
- * 
- * Usage:
- *   node seeders/index.js
- * 
- * Duration: ~5-10 minutes for full dataset (300k+ bookings)
+ * Seeder Orchestrator (FIXED VERSION)
+ * - Auto detect seeders
+ * - Safe model lookup
+ * - Better error handling
+ * - No hard dependency on file naming
  */
 
+const fs = require('fs');
 const path = require('path');
 const db = require('../models');
 const Sequelize = require('sequelize');
 
-// Define execution order based on dependencies
-const SEEDER_EXECUTION_ORDER = [
-  // Phase 1: No dependencies (master data foundations)
-  { name: '01-monchoi-seeder', label: 'Game Types' },
-  { name: '07-chusan-seeder', label: 'Court Owners' },
-  { name: '06-admin-seeder', label: 'Administrators' },
-  { name: '09-nguoidung-seeder', label: 'End Users' },
+const SEEDERS_DIR = __dirname;
 
-  // Phase 2: Depends on Phase 1
-  { name: '02-santhetha-seeder', label: 'Sports Courts' },
-  { name: '08-nhanvien-seeder', label: 'Court Staff' },
+// ================= SAFE MODEL RESOLVER =================
+function getModel(modelName) {
+  const models = db.sequelize.models;
 
-  // Phase 3: Depends on Phase 2
-  { name: '03-vitrisan-seeder', label: 'Court Positions' },
-  { name: '04-dichvu-seeder', label: 'Services' },
-  { name: '05-magiamgia-seeder', label: 'Discount Codes' },
-  { name: '13-sukien-seeder', label: 'Events' },
-  { name: '14-thongbao-seeder', label: 'Announcements' },
+  // try exact match
+  if (models[modelName]) return models[modelName];
 
-  // Phase 4: Depends on Phase 3 + Phase 1 users
-  { name: '10-datsan-seeder', label: 'Bookings (300k)' },
-
-  // Phase 5: Depends on Phase 4
-  { name: '11-datsandichvu-seeder', label: 'Booking-Services (500k)' },
-  { name: '12-danhgia-seeder', label: 'Reviews' },
-  { name: '15-lichsuthanhtoan-seeder', label: 'Payment History' }
-];
-
-// Models to truncate
-const MODELS_TO_TRUNCATE = [
-  'monchoi',
-  'chusan',
-  'admin',
-  'nguoidung',
-  'santhetha',
-  'nhanvien',
-  'vitrisan',
-  'dichvu',
-  'magiamgia',
-  'sukien',
-  'thongbao',
-  'datsan',
-  'datsandichvu',
-  'danhgia',
-  'lichsuthanhtoan'
-];
-
-/**
- * Truncate a table
- */
-async function truncateTable(modelName) {
-  try {
-    const model = db[modelName];
-    if (!model) {
-      console.log(`⚠ Model ${modelName} not found, skipping truncate`);
-      return;
-    }
-    await model.destroy({ where: {}, truncate: true, cascade: true });
-    console.log(`✓ Truncated ${modelName}`);
-  } catch (error) {
-    console.error(`✗ Error truncating ${modelName}:`, error.message);
-    throw error;
+  // try lowercase
+  const lower = modelName.toLowerCase();
+  for (const key of Object.keys(models)) {
+    if (key.toLowerCase() === lower) return models[key];
   }
+
+  return null;
 }
 
-/**
- * Run a single seeder
- */
-async function runSeeder(seederFile) {
-  try {
-    const seederPath = path.join(__dirname, seederFile + '.js');
-    const seeder = require(seederPath);
-    
-    // Get queryInterface from sequelize instance
-    const queryInterface = db.sequelize.getQueryInterface();
-    
-    // Run the seeder's up function
-    await seeder.up(queryInterface, Sequelize);
-    
-  } catch (error) {
-    console.error(`✗ Error in seeder ${seederFile}:`, error.message);
-    throw error;
-  }
+// ================= AUTO LOAD SEEDERS =================
+function loadSeeders() {
+  const files = fs
+    .readdirSync(SEEDERS_DIR)
+    .filter(f =>
+      f.endsWith('-seeder.js') &&
+      f !== 'index.js'
+    )
+    .sort(); // ensure order by name
+
+  return files.map(file => ({
+    name: file.replace('.js', ''),
+    filePath: path.join(SEEDERS_DIR, file)
+  }));
 }
 
-/**
- * Main orchestration function
- */
-async function runAllSeeders() {
-  const startTime = Date.now();
-  let completed = 0;
-  let failed = 0;
+// ================= TRUNCATE SAFELY =================
+async function truncateAll() {
+  console.log('\n📋 Truncating tables...\n');
+
+  const models = db.sequelize.models;
+
+  for (const modelName of Object.keys(models)) {
+    try {
+      await models[modelName].destroy({
+        where: {},
+        truncate: true,
+        cascade: true,
+        force: true
+      });
+
+      console.log(`✓ Truncated ${modelName}`);
+    } catch (err) {
+      console.log(`⚠ Skip ${modelName}: ${err.message}`);
+    }
+  }
+
+  console.log('');
+}
+
+// ================= RUN SINGLE SEEDER =================
+async function runSeeder(filePath, name) {
+  const seeder = require(filePath);
+
+  if (!seeder.up) {
+    throw new Error(`${name} missing "up" function`);
+  }
+
+  const queryInterface = db.sequelize.getQueryInterface();
+
+  await seeder.up(queryInterface, Sequelize);
+}
+
+// ================= MAIN RUNNER =================
+async function runAll() {
+  console.log('\n====================================');
+  console.log('🌱 SEEDER ORCHESTRATOR (FIXED)');
+  console.log('====================================\n');
+
+  const seeders = loadSeeders();
+
+  console.log(`📦 Found ${seeders.length} seeders\n`);
 
   try {
-    console.log('\n' + '='.repeat(70));
-    console.log('🌱 SPORTS COURT BOOKING SYSTEM - SEEDER ORCHESTRATOR');
-    console.log('='.repeat(70) + '\n');
+    // STEP 1: truncate
+    await truncateAll();
 
-    // Phase 0: Truncate all tables
-    console.log('📋 PHASE 0: Truncating existing data...\n');
-    for (const modelName of MODELS_TO_TRUNCATE) {
-      await truncateTable(modelName);
-    }
-    console.log('');
+    // STEP 2: run seeders
+    for (let i = 0; i < seeders.length; i++) {
+      const s = seeders[i];
 
-    // Phase 1-5: Run seeders in order
-    for (let i = 0; i < SEEDER_EXECUTION_ORDER.length; i++) {
-      const seederConfig = SEEDER_EXECUTION_ORDER[i];
-      const phaseNum = Math.floor(i / 4) + 1;
-      const phaseLabel = 
-        phaseNum === 1 ? 'Master Data Foundations' :
-        phaseNum === 2 ? 'Master Data Dependencies' :
-        phaseNum === 3 ? 'Court Facilities' :
-        phaseNum === 4 ? 'Booking Data' :
-        phaseNum === 5 ? 'Transaction Data' :
-        'Other';
+      console.log(`[${i + 1}/${seeders.length}] Seeding: ${s.name}`);
 
-      const stepNum = (i % 4) + 1;
-      
-      try {
-        console.log(`[PHASE ${phaseNum}/${5}] (${stepNum}/4) 🔄 Seeding ${seederConfig.label}...`);
-        const stepStart = Date.now();
-        
-        await runSeeder(seederConfig.name);
-        
-        const stepDuration = ((Date.now() - stepStart) / 1000).toFixed(2);
-        console.log(`✅ Completed in ${stepDuration}s\n`);
-        completed++;
-      } catch (error) {
-        console.error(`❌ Failed with error: ${error.message}\n`);
-        failed++;
-        // Continue to next seeder instead of stopping
-      }
+      const start = Date.now();
+
+      await runSeeder(s.filePath, s.name);
+
+      const time = ((Date.now() - start) / 1000).toFixed(2);
+      console.log(`✓ Done in ${time}s\n`);
     }
 
-    // Final summary
-    const totalTime = ((Date.now() - startTime) / 1000 / 60).toFixed(2);
-    console.log('='.repeat(70));
-    console.log('📊 SEEDING SUMMARY');
-    console.log('='.repeat(70));
-    console.log(`✅ Completed: ${completed}/${SEEDER_EXECUTION_ORDER.length}`);
-    console.log(`❌ Failed: ${failed}/${SEEDER_EXECUTION_ORDER.length}`);
-    console.log(`⏱️  Total Time: ${totalTime} minutes`);
-    console.log('='.repeat(70) + '\n');
+    console.log('\n🎉 ALL SEEDERS COMPLETED SUCCESSFULLY\n');
 
-    if (failed === 0) {
-      console.log('🎉 All seeders completed successfully!');
-      console.log('\n📈 Expected Record Counts:');
-      console.log('   - monchois: 7');
-      console.log('   - santhethaos: 750');
-      console.log('   - vitrisans: 3,500');
-      console.log('   - dichvus: 1,500');
-      console.log('   - magiamgias: 250');
-      console.log('   - chusans: 500');
-      console.log('   - nhanviens: 1,500');
-      console.log('   - nguoidungs: 30,000');
-      console.log('   - admins: 5');
-      console.log('   - datsans: 300,000');
-      console.log('   - datsandichvus: 500,000');
-      console.log('   - danhgias: 75,000');
-      console.log('   - sukiens: 500');
-      console.log('   - thongbaos: 1,500');
-      console.log('   - lichsuthanhtoans: ~210,000 (70% of confirmed bookings)');
-      console.log('\n💾 Total Estimated Records: ~1.1 million');
-      console.log('\n🧪 Verification Queries:');
-      console.log('   SELECT COUNT(*) FROM monchois;');
-      console.log('   SELECT COUNT(*) FROM datsans;');
-      console.log('   SELECT COUNT(*) FROM datsandichvus;');
-      console.log('');
-    } else {
-      console.log(`⚠️  Some seeders failed. Check errors above.`);
-      process.exit(1);
-    }
-
-  } catch (error) {
-    console.error('\n🔴 FATAL ERROR:', error.message);
-    console.error(error.stack);
+  } catch (err) {
+    console.error('\n❌ SEEDING FAILED');
+    console.error(err.message);
+    console.error(err.stack);
     process.exit(1);
   } finally {
-    // Close database connection
     await db.sequelize.close();
   }
 }
 
-// Run the seeder
-runAllSeeders();
+// RUN
+runAll();
