@@ -1,11 +1,4 @@
-let faker;
-
-async function loadFaker() {
-  if (!faker) {
-    faker = (await import('@faker-js/faker')).faker;
-  }
-  return faker;
-}
+const faker = require("faker");
 
 // ==================== DETERMINISTIC UNIQUENESS ====================
 
