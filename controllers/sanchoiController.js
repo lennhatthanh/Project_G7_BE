@@ -1,4 +1,4 @@
-const {Santhethao} = require("../models");
+const { Santhethao } = require("../models");
 const icons = {
     "Bóng đá": "icon/bong_da.png", // icon hình quả bóng đá
     "Bóng chuyền": "volleyball.png", // icon hình bóng chuyền
@@ -42,7 +42,7 @@ class SansController {
                 gio_mo_cua,
                 gio_dong_cua,
                 kinh_do,
-                vi_do
+                vi_do,
             );
 
             return res.status(200).json({
@@ -89,7 +89,7 @@ class SansController {
                 gio_dong_cua,
                 kinh_do,
                 vi_do,
-                tinh_trang
+                tinh_trang,
             );
 
             return res.status(200).json({
@@ -105,9 +105,17 @@ class SansController {
     async xoaSan(req, res) {
         try {
             const id = req.params.id;
-            await Santhethao.delete(id);
+            const san = await Santhethao.findByPk(id);
 
-            return res.status(200).json({
+            if (!san) {
+                return res.status(404).json({
+                    message: "Không tìm thấy sân",
+                });
+            }
+
+            await san.destroy();
+
+            return res.json({
                 message: "Xóa sân thành công",
             });
         } catch (error) {
@@ -125,9 +133,7 @@ class SansController {
             });
         } catch (error) {
             console.error(error);
-            return res
-                .status(500)
-                .json({ message: "Lỗi khi lấy danh sách sân" });
+            return res.status(500).json({ message: "Lỗi khi lấy danh sách sân" });
         }
     }
     async laySanTheoChuSan(req, res) {
