@@ -1,59 +1,85 @@
 'use strict';
-const { Model } = require('sequelize');
+const { Model, QueryTypes } = require('sequelize');
 
 module.exports = (sequelize, DataTypes) => {
   class Dichvu extends Model {
+
     static associate(models) {
       Dichvu.belongsTo(models.Santhethao, { foreignKey: 'id_san' });
       Dichvu.hasMany(models.Datsandichvu, { foreignKey: 'id_dich_vu' });
     }
 
+    // CREATE
     static async add(id_san, ten_dich_vu, mo_ta, don_gia) {
-      return await this.create({ id_san, ten_dich_vu, mo_ta, don_gia });
+      return await this.create({
+        id_san,
+        ten_dich_vu,
+        mo_ta,
+        don_gia
+      });
     }
 
-    static async updateRecord(id, id_san, ten_dich_vu, mo_ta, don_gia, tinh_trang) {
-      const [, [updated]] = await this.update(
-        { id_san, ten_dich_vu, mo_ta, don_gia, tinh_trang },
-        { where: { id }, returning: true }
-      );
-      return updated;
+    // UPDATE (FIX RETURN)
+    static async updateRecord(id, payload) {
+      await this.update(payload, {
+        where: { id }
+      });
+
+      return await this.findByPk(id);
     }
 
+    // DELETE
     static async deleteRecord(id) {
       const record = await this.findByPk(id);
-      if (record) await record.destroy();
+      if (!record) return null;
+      await record.destroy();
       return record;
     }
 
+    // GET BY CHU SAN (RAW QUERY FIXED)
     static async getAll(id_chu_san) {
       const query = `
-        SELECT dichvus.*, santhethaos.id_chu_san
-        FROM dichvus 
-        JOIN santhethaos ON dichvus.id_san = santhethaos.id 
-        WHERE santhethaos.id_chu_san = :id_chu_san AND santhethaos.tinh_trang = true
+        SELECT d.*, s.id_chu_san
+        FROM dichvus d
+        JOIN santhethaos s ON d.id_san = s.id
+        WHERE s.id_chu_san = :id_chu_san
+          AND s.tinh_trang = true
       `;
-      return await sequelize.query(query, { replacements: { id_chu_san }, type: sequelize.QueryTypes.SELECT });
+
+      return await sequelize.query(query, {
+        replacements: { id_chu_san: Number(id_chu_san) },
+        type: QueryTypes.SELECT
+      });
     }
 
+    // GET BY SAN
     static async getAllOpenById(id_san) {
       const query = `
-        SELECT dichvus.*
-        FROM dichvus 
-        JOIN santhethaos ON dichvus.id_san = santhethaos.id 
-        WHERE dichvus.id_san = :id_san AND dichvus.tinh_trang = true
+        SELECT *
+        FROM dichvus
+        WHERE id_san = :id_san
+          AND tinh_trang = true
       `;
-      return await sequelize.query(query, { replacements: { id_san }, type: sequelize.QueryTypes.SELECT });
+
+      return await sequelize.query(query, {
+        replacements: { id_san: Number(id_san) },
+        type: QueryTypes.SELECT
+      });
     }
 
+    // GET ALL OPEN
     static async getAllOpen() {
       const query = `
-        SELECT dichvus.*
-        FROM dichvus 
-        JOIN santhethaos ON dichvus.id_san = santhethaos.id 
-        WHERE dichvus.tinh_trang = true AND santhethaos.tinh_trang = true
+        SELECT d.*
+        FROM dichvus d
+        JOIN santhethaos s ON d.id_san = s.id
+        WHERE d.tinh_trang = true
+          AND s.tinh_trang = true
       `;
-      return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+
+      return await sequelize.query(query, {
+        type: QueryTypes.SELECT
+      });
     }
   }
 
@@ -62,12 +88,19 @@ module.exports = (sequelize, DataTypes) => {
     ten_dich_vu: DataTypes.STRING,
     mo_ta: DataTypes.STRING,
     don_gia: DataTypes.NUMERIC,
-    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+    tinh_trang: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
   }, {
     sequelize,
     modelName: 'Dichvu',
     tableName: 'dichvus',
-    indexes: [{ fields: ['id_san'], name: 'idx_dichvus_san' }]
+    timestamps: true,
+    indexes: [
+      { fields: ['id_san'] }
+    ]
   });
+
   return Dichvu;
 };
