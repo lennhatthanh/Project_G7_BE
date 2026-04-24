@@ -42,7 +42,6 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
-app.use("/uploads/images", express.static("uploads/images"))
 console.log("DB_HOST =", process.env.DB_HOST);
 app.use('/', indexRouter);
 app.use('/auth',authRouter);
