@@ -61,7 +61,7 @@ class chusanController {
             } = req.body;
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau, salt);
-            const data = await Chusan.update(
+            const data = await Chusan.updateRecord(
                 id,
                 ho_ten,
                 email,
@@ -100,7 +100,7 @@ class chusanController {
     async xoaChuSan(req, res) {
         try {
             const id = req.params.id;
-            const data = await Chusan.delete(id);
+            const data = await Chusan.deleteRecord(id);
             return res
                 .status(200)
                 .json({ message: "Xóa thành công", data: data });

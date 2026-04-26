@@ -22,7 +22,7 @@ class danhgiaController {
   async capNhatDanhGia(req, res) {
     try {
       const { id, so_sao, danh_gia } = req.body;
-      await Danhgia.update(id, so_sao, danh_gia);
+      await Danhgia.updateRecord(id, so_sao, danh_gia);
       return res.status(200).json({ message: "Cập nhật thành công" });
     } catch (error) {
       return res.status(500).json({ message: "Lỗi: " + error.message });
@@ -31,8 +31,8 @@ class danhgiaController {
 
   async xoaDanhGia(req, res) {
     try {
-      const id  = req.params.id
-      await Danhgia.delete(id);
+      const id  = req.params.id 
+      await Danhgia.deleteRecord(id);
       return res.status(200).json({ message: "Xóa thành công" });
     } catch (error) {
       return res.status(500).json({ message: "Lỗi: " + error.message });

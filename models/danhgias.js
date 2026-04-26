@@ -12,9 +12,9 @@ module.exports = (sequelize, DataTypes) => {
       return await this.create({ id_vi_tri_san, id_nguoi_dung, so_sao, danh_gia });
     }
 
-    static async updateRecord(id, so_sao, danh_gia, tinh_trang) {
+    static async updateRecord(id, so_sao, danh_gia) {
       const [, [updated]] = await this.update(
-        { so_sao, danh_gia, tinh_trang },
+        { so_sao, danh_gia },
         { where: { id }, returning: true }
       );
       return updated;

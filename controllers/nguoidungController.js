@@ -7,7 +7,7 @@ class nguoidungController {
         const {id, ho_ten,email,mat_khau,so_dien_thoai,gioi_tinh,tinh_trang} = req.body
         const salt = await bcrypt.genSalt(10);
         const hashed = await bcrypt.hash(mat_khau, salt);
-        const data = await Nguoidung.update(id, ho_ten,email,hashed,so_dien_thoai,gioi_tinh,tinh_trang);
+        const data = await Nguoidung.updateRecord(id, ho_ten,email,hashed,so_dien_thoai,gioi_tinh,tinh_trang);
         return res.status(200).json({ message: "Cập nhật thành công", data: data });
       } catch (error) {
         return res.status(500).json({message: "Lỗi: " + error.message});
@@ -27,7 +27,7 @@ class nguoidungController {
     async xoaNguoiDung(req, res) {
       try {
         const id  = req.params.id
-        const data = await Nguoidung.delete(id);
+        const data = await Nguoidung.deleteRecord(id);
         return res.status(200).json({ message: "Xóa thành công", data: data });
       } catch (error) {
         return res.status(500).json({ message: "Lỗi: " + error.message });

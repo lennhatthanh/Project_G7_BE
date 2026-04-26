@@ -52,7 +52,7 @@ class authController {
         try {
             const verify = jwt.verify(token, process.env.JWT_EMAIL_SECRET);
             const email = verify.email;
-            await Nguoidung.update(email);
+            await Nguoidung.verify(email);
             res.status(200).json({ message: "Xác thực thành công" });
         } catch (error) {
             res.status(500).json({ message: "Lỗi: " + error.message });

@@ -59,7 +59,7 @@ class dichvuController {
     }
     async xoaDichVu(req, res) {
         try {
-            await Dichvu.delete(req.params.id);
+            await Dichvu.deleteRecord(req.params.id);
             return res.status(200).json({ message: "Xóa Thành Công" });
         } catch (error) {
             return res.status(500).json({ message: "Xóa thất bại" });

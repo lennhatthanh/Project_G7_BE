@@ -48,7 +48,7 @@ class thongbaoController {
   async capNhatThongBao(req, res) {
     try {
       const { id, tieu_de, noi_dung, tinh_trang, id_san } = req.body;
-      const data = await Thongbao.update(
+      const data = await Thongbao.updateRecord(
         id,
         tieu_de,
         noi_dung,
@@ -65,7 +65,7 @@ class thongbaoController {
   async xoaThongBao(req, res) {
     try {
       const id = req.params.id;
-      const data = await Thongbao.delete(id);
+      const data = await Thongbao.deleteRecord(id);
       return res.json({ message: "Xóa thành công", data: data });
     } catch (error) {
       console.error(error);

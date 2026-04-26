@@ -52,6 +52,11 @@ module.exports = (sequelize, DataTypes) => {
   }
 
   Chusan.init({
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true // Khai báo ở đây để Sequelize hiểu và quản lý ID tốt hơn
+    },
     ho_ten: DataTypes.STRING,
     email: { type: DataTypes.STRING, unique: true },
     mat_khau: DataTypes.STRING,

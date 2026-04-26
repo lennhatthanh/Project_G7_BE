@@ -20,13 +20,23 @@ module.exports = (sequelize, DataTypes) => {
     }
 
     // UPDATE (FIX RETURN)
-    static async updateRecord(id, payload) {
-      await this.update(payload, {
-        where: { id }
-      });
+    // static async updateRecord(id, payload) {
+    //   await this.update(payload, {
+    //     where: { id }
+    //   });
 
-      return await this.findByPk(id);
-    }
+    //   return await this.findByPk(id);
+    // }
+    static async update(id, id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang) {
+      const data = await pool.query(
+        'update dichvus set id_san = $1,ten_dich_vu =$2, mo_ta=$3, don_gia=$4, tinh_trang = $5,"updatedAt" = NOW() where id =$6 RETURNING * ',
+        [id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang, id]
+      );
+      return data.rows[0];
+    }    
+
+
+
 
     // DELETE
     static async deleteRecord(id) {

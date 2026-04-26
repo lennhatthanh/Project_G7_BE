@@ -70,7 +70,7 @@ class nhanvienController {
             } = req.body;
             const salt = await bcrypt.genSalt(10);
             const hashed = await bcrypt.hash(mat_khau, salt);
-            const data = await Nhanvien.update(
+            const data = await Nhanvien.updateRecord(
                 id,
                 id_san,
                 ho_ten,
@@ -109,7 +109,7 @@ class nhanvienController {
     async xoaNhanVien(req, res) {
         try {
             const id = req.params.id;
-            const data = await Nhanvien.delete(id);
+            const data = await Nhanvien.deleteRecord(id);
             return res
                 .status(200)
                 .json({ message: "Xóa thành công", data: data });

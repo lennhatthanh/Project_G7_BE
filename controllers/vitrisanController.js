@@ -35,7 +35,7 @@ class ViTriSanController {
       const { id, id_san, id_mon_choi, so_san, gia_san, mo_ta, tinh_trang } =
         req.body;
 
-      const data = await Vitrisan.update(
+      const data = await Vitrisan.updateRecord(
         id,
         id_san,
         id_mon_choi,
@@ -58,7 +58,7 @@ class ViTriSanController {
   async xoaViTriSan(req, res) {
     try {
       const id  = req.params.id
-      const data = await Vitrisan.delete(id);
+      const data = await Vitrisan.deleteRecord(id);
       return res.status(200).json({
         message: "Xóa thành công",
         data: data,

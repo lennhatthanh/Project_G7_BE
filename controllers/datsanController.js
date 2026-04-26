@@ -51,7 +51,7 @@ class datsanController {
             const paymentLink = await payos.createPaymentLink(order);
             setTimeout(async () => {
                 try {
-                    await Datsan.delete(orderCode);
+                    await Datsan.deleteRecord(orderCode);
                     console.log("Đã tự động hủy đơn:", orderCode);
                 } catch (err) {
                     console.error("Lỗi khi xóa đơn:", err.message);
@@ -71,11 +71,11 @@ class datsanController {
             console.log(cancel, status, code, id, orderCode);
             if (cancel === "true" || status === "CANCELLED") {
                 console.log("Thanh toán đã bị hủy");
-                const data = await Datsan.delete(orderCode);
+                const data = await Datsan.deleteRecord(orderCode);
                 return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/dat-san/${id_san}`);
             }
             console.log("Thanh toán thành công");
-            const data = await Datsan.update(orderCode);
+            const data = await Datsan.updateRecord(orderCode);
             return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/dat-san/${id_san}`);
         } catch (error) {
             console.error("Lỗi khi xử lý thanh toán:", error.message);

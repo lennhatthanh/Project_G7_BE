@@ -77,7 +77,7 @@ class SansController {
 
             const hinh_anh = req.file?.key || req.file?.location;
 
-            const data = await Santhethao.update(
+            const data = await Santhethao.updateRecord(
                 id,
                 id_chu_san,
                 ten_san,
@@ -129,7 +129,7 @@ class SansController {
 
     async layTatCaSan(req, res) {
         try {
-            const data = await Santhethao.getAll();
+            const data = await Santhethao.getAllOpen();
             return res.status(200).json({
                 message: "Lấy danh sách sân thành công",
                 data: data,
@@ -157,26 +157,26 @@ class SansController {
             return res.status(500).json({ message: "Lỗi server" });
         }
     }
-    async laySanTheoId(req, res) {
-        try {
-            const id = req.params.id;
-            // Gợi ý: Tối ưu bằng cách gộp 2 truy vấn thành 1 sử dụng 'include' của Sequelize
-            // Giả sử model 'santhethaos' có quan hệ với 'vitrisans'
-            const data = await Santhethao.getByIdWithDetails(id); // Đây là một hàm mới cần được tạo trong model
+    // async laySanTheoId(req, res) {
+    //     try {
+    //         const id = req.params.id;
+    //         // Gợi ý: Tối ưu bằng cách gộp 2 truy vấn thành 1 sử dụng 'include' của Sequelize
+    //         // Giả sử model 'santhethaos' có quan hệ với 'vitrisans'
+    //         const data = await Santhethao.getByIdWithDetails(id); // Đây là một hàm mới cần được tạo trong model
 
-            // Ví dụ về hàm getByIdWithDetails trong model:
-            // static async getByIdWithDetails(id) {
-            //   return await db.santhethaos.findByPk(id, {
-            //     include: [{ model: db.vitrisans, as: 'vitrisan_details' }]
-            //   });
-            // }
+    //         // Ví dụ về hàm getByIdWithDetails trong model:
+    //         // static async getByIdWithDetails(id) {
+    //         //   return await db.santhethaos.findByPk(id, {
+    //         //     include: [{ model: db.vitrisans, as: 'vitrisan_details' }]
+    //         //   });
+    //         // }
 
-            return res.status(200).json({ data: data });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Lỗi server" });
-        }
-    }
+    //         return res.status(200).json({ data: data });
+    //     } catch (error) {
+    //         console.error(error);
+    //         return res.status(500).json({ message: "Lỗi server" });
+    //     }
+    // }
 
     async laySanOpen(req, res) {
         try {

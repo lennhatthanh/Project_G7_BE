@@ -47,7 +47,7 @@ class magiamgiaController {
                 id,
             } = req.body;
 
-            const data = await Magiamgia.update(
+            const data = await Magiamgia.updateRecord(
                 ma_giam_gia,
                 gia_tri_giam,
                 mo_ta,
@@ -72,7 +72,7 @@ class magiamgiaController {
     async xoaMaGiamGia(req, res) {
         try {
             const id = req.params.id;
-            await Magiamgia.delete(id);
+            await Magiamgia.deleteRecord(id);
             return res
                 .status(200)
                 .json({ message: "Xóa mã giảm giá thành công" });

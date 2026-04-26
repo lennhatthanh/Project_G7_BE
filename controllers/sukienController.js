@@ -99,7 +99,7 @@ class sukienController {
         try {
             const { id, id_san, ten_su_kien, noi_dung, thoi_gian_bat_dau, thoi_gian_ket_thuc, so_luong, tinh_trang } =
                 req.body;
-            const data = await Sukien.update(
+            const data = await Sukien.updateRecord(
                 id,
                 id_san,
                 ten_su_kien,
@@ -135,7 +135,7 @@ class sukienController {
             const paymentLink = await payos.createPaymentLink(order);
             setTimeout(async () => {
                 try {
-                    await Nguoidungsukien.delete(orderCode);
+                    await Nguoidungsukien.deleteRecord(orderCode);
                     console.log("Đã tự động hủy đơn:", orderCode);
                 } catch (err) {
                     console.error("Lỗi khi xóa đơn:", err.message);
@@ -153,11 +153,11 @@ class sukienController {
             console.log(cancel, status, code, id, orderCode);
             if (cancel === "true" || status === "CANCELLED") {
                 console.log("Thanh toán đã bị hủy");
-                const data = await Nguoidungsukien.delete(orderCode);
+                const data = await Nguoidungsukien.deleteRecord(orderCode);
                 return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/su-kien`);
             }
             console.log("Thanh toán thành công");
-            const data = await Nguoidungsukien.update(orderCode);
+            const data = await Nguoidungsukien.updateRecord(orderCode);
             return res.redirect(`https://d3tsalu92kyy06.cloudfront.net/su-kien`);
         } catch (error) {
             console.error("Lỗi khi xử lý thanh toán:", error.message);
@@ -171,7 +171,7 @@ class sukienController {
     async xoaSuKien(req, res) {
         try {
             const id = req.params.id;
-            await Sukien.delete(id);
+            await Sukien.deleteRecord(id);
             return res.status(200).json({ message: "Xóa thành công" });
         } catch (error) {
             return res.status(500).json({ message: "Lỗi: " + error.message });

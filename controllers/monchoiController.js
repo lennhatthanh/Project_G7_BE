@@ -17,7 +17,7 @@ class MonChoiController {
   async capnhatMonChoi(req, res) {
     try {
       const { id, ten_mon, mo_ta, tinh_trang } = req.body;
-      const data = await Monchoi.update(id, ten_mon, mo_ta, tinh_trang);
+      const data = await Monchoi.updateRecord(id, ten_mon, mo_ta, tinh_trang);
       return res.status(200).json({
         message: "Cập nhật thành công",
         data: data,
@@ -31,7 +31,7 @@ class MonChoiController {
   async xoaMonChoi(req, res) {
     try {
       const id  = req.params.id
-      await Monchoi.delete(id);
+      await Monchoi.deleteRecord(id);
 
       return res.status(200).json({
         message: "Xóa thành công",
