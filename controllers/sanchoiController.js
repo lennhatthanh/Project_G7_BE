@@ -1,4 +1,4 @@
-const sans = require("../models/santhethaos");
+const { Santhethao } = require("../models");
 const icons = {
     "Bóng đá": "icon/bong_da.png", // icon hình quả bóng đá
     "Bóng chuyền": "volleyball.png", // icon hình bóng chuyền
@@ -9,6 +9,7 @@ const icons = {
 };
 class SansController {
     async themSan(req, res) {
+        
         try {
             const {
                 ten_san,
@@ -27,9 +28,9 @@ class SansController {
             // Lấy icon dựa vào loại sân
             const icon = icons[loai_san] || "default-icon.png"; // Nếu không tìm thấy, sử dụng icon mặc định
 
-            const hinh_anh = req.file?.filename || null;
+            const hinh_anh = req.file?.key || req.file?.location || null;
 
-            const data = await sans.add(
+            const data = await Santhethao.add(
                 id_chu_san,
                 ten_san,
                 loai_san,
@@ -42,9 +43,11 @@ class SansController {
                 gio_mo_cua,
                 gio_dong_cua,
                 kinh_do,
-                vi_do
+                vi_do,
             );
-
+            
+        console.log("DEBUG: req.file =", req.file);
+        console.log("DEBUG: req.body =", req.body);
             return res.status(200).json({
                 message: "Thêm sân thành công",
                 data: data,
@@ -72,9 +75,9 @@ class SansController {
                 tinh_trang,
             } = req.body;
 
-            const hinh_anh = req.file?.filename;
+            const hinh_anh = req.file?.key || req.file?.location;
 
-            const data = await sans.update(
+            const data = await Santhethao.updateRecord(
                 id,
                 id_chu_san,
                 ten_san,
@@ -89,7 +92,7 @@ class SansController {
                 gio_dong_cua,
                 kinh_do,
                 vi_do,
-                tinh_trang
+                tinh_trang,
             );
 
             return res.status(200).json({
@@ -105,9 +108,17 @@ class SansController {
     async xoaSan(req, res) {
         try {
             const id = req.params.id;
-            await sans.delete(id);
+            const san = await Santhethao.findByPk(id);
 
-            return res.status(200).json({
+            if (!san) {
+                return res.status(404).json({
+                    message: "Không tìm thấy sân",
+                });
+            }
+
+            await san.destroy();
+
+            return res.json({
                 message: "Xóa sân thành công",
             });
         } catch (error) {
@@ -118,21 +129,19 @@ class SansController {
 
     async layTatCaSan(req, res) {
         try {
-            const data = await sans.getAll();
+            const data = await Santhethao.getAllOpen();
             return res.status(200).json({
                 message: "Lấy danh sách sân thành công",
                 data: data,
             });
         } catch (error) {
             console.error(error);
-            return res
-                .status(500)
-                .json({ message: "Lỗi khi lấy danh sách sân" });
+            return res.status(500).json({ message: "Lỗi khi lấy danh sách sân" });
         }
     }
     async laySanTheoChuSan(req, res) {
         try {
-            const data = await sans.getAllByChuSan(req.user.id);
+            const data = await Santhethao.getAllByChuSan(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             console.error(error);
@@ -141,30 +150,37 @@ class SansController {
     }
     async laySanTheoChuSanOpen(req, res) {
         try {
-            const data = await sans.getAllByChuSanOpen(req.user.id);
+            const data = await Santhethao.getAllByChuSanOpen(req.user.id);
             return res.status(200).json({ data: data });
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: "Lỗi server" });
         }
     }
-    async laySanTheoId(req, res) {
-        try {
-            const id = req.params.id;
-            const data = await sans.getById(id);
-            const datavitrisan = await sans.getDataById(id);
-            return res
-                .status(200)
-                .json({ data: data, datavitrisan: datavitrisan });
-        } catch (error) {
-            console.error(error);
-            return res.status(500).json({ message: "Lỗi server" });
-        }
-    }
+    // async laySanTheoId(req, res) {
+    //     try {
+    //         const id = req.params.id;
+    //         // Gợi ý: Tối ưu bằng cách gộp 2 truy vấn thành 1 sử dụng 'include' của Sequelize
+    //         // Giả sử model 'santhethaos' có quan hệ với 'vitrisans'
+    //         const data = await Santhethao.getByIdWithDetails(id); // Đây là một hàm mới cần được tạo trong model
+
+    //         // Ví dụ về hàm getByIdWithDetails trong model:
+    //         // static async getByIdWithDetails(id) {
+    //         //   return await db.santhethaos.findByPk(id, {
+    //         //     include: [{ model: db.vitrisans, as: 'vitrisan_details' }]
+    //         //   });
+    //         // }
+
+    //         return res.status(200).json({ data: data });
+    //     } catch (error) {
+    //         console.error(error);
+    //         return res.status(500).json({ message: "Lỗi server" });
+    //     }
+    // }
 
     async laySanOpen(req, res) {
         try {
-            const data = await sans.getAllOpen();
+            const data = await Santhethao.getAllOpen();
             return res.status(200).json({ data: data });
         } catch (error) {
             console.error(error);

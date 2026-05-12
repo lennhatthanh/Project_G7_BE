@@ -1,50 +1,116 @@
-const pool = require("../db");
-class DichVu {
-  async add(id_san, ten_dich_vu, mo_ta, don_gia) {
-    const data = await pool.query(
-      "INSERT INTO dichvus(id_san, ten_dich_vu, mo_ta, don_gia) VALUES ($1,$2,$3,$4) returning *",
-      [id_san,ten_dich_vu, mo_ta, don_gia]
-    );
-    return data.rows[0];
+'use strict';
+const { Model, QueryTypes } = require('sequelize');
+
+module.exports = (sequelize, DataTypes) => {
+  class Dichvu extends Model {
+
+    static associate(models) {
+      Dichvu.belongsTo(models.Santhethao, { foreignKey: 'id_san' });
+      Dichvu.hasMany(models.Datsandichvu, { foreignKey: 'id_dich_vu' });
+    }
+
+    // CREATE
+    static async add(id_san, ten_dich_vu, mo_ta, don_gia) {
+      return await this.create({
+        id_san,
+        ten_dich_vu,
+        mo_ta,
+        don_gia
+      });
+    }
+
+    // UPDATE (FIX RETURN)
+    // static async updateRecord(id, payload) {
+    //   await this.update(payload, {
+    //     where: { id }
+    //   });
+
+    //   return await this.findByPk(id);
+    // }
+    static async update(id, id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang) {
+      const data = await pool.query(
+        'update dichvus set id_san = $1,ten_dich_vu =$2, mo_ta=$3, don_gia=$4, tinh_trang = $5,"updatedAt" = NOW() where id =$6 RETURNING * ',
+        [id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang, id]
+      );
+      return data.rows[0];
+    }    
+
+
+
+
+    // DELETE
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (!record) return null;
+      await record.destroy();
+      return record;
+    }
+
+    // GET BY CHU SAN (RAW QUERY FIXED)
+    static async getAll(id_chu_san) {
+      const query = `
+        SELECT d.*, s.id_chu_san
+        FROM dichvus d
+        JOIN santhethaos s ON d.id_san = s.id
+        WHERE s.id_chu_san = :id_chu_san
+          AND s.tinh_trang = true
+      `;
+
+      return await sequelize.query(query, {
+        replacements: { id_chu_san: Number(id_chu_san) },
+        type: QueryTypes.SELECT
+      });
+    }
+
+    // GET BY SAN
+    static async getAllOpenById(id_san) {
+      const query = `
+        SELECT *
+        FROM dichvus
+        WHERE id_san = :id_san
+          AND tinh_trang = true
+      `;
+
+      return await sequelize.query(query, {
+        replacements: { id_san: Number(id_san) },
+        type: QueryTypes.SELECT
+      });
+    }
+
+    // GET ALL OPEN
+    static async getAllOpen() {
+      const query = `
+        SELECT d.*
+        FROM dichvus d
+        JOIN santhethaos s ON d.id_san = s.id
+        WHERE d.tinh_trang = true
+          AND s.tinh_trang = true
+      `;
+
+      return await sequelize.query(query, {
+        type: QueryTypes.SELECT
+      });
+    }
   }
-  async update(id, id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang) {
-    const data = await pool.query(
-      'update dichvus set id_san = $1,ten_dich_vu =$2, mo_ta=$3, don_gia=$4, tinh_trang = $5,"updatedAt" = NOW() where id =$6 RETURNING * ',
-      [id_san,ten_dich_vu, mo_ta, don_gia,tinh_trang, id]
-    );
-    return data.rows[0];
-  }
-  async delete(id) {
-    const data = await pool.query(
-      "delete from dichvus where id=$1 RETURNING *",
-      [id]
-    );
-    return data.rows[0];
-  }
-  async getAll(id) {
-    const data = await pool.query(
-      `select dichvus.*, santhethaos.id_chu_san
-      from dichvus 
-      join santhethaos on dichvus.id_san = santhethaos.id where santhethaos.id_chu_san = $1 and santhethaos.tinh_trang = true `, [id]
-    );
-    return data.rows;
-  }
-  async getAllOpenById(id) {
-    const data = await pool.query(
-      `select dichvus.*
-      from dichvus 
-      join santhethaos on dichvus.id_san = santhethaos.id where dichvus.id_san = $1 AND dichvus.tinh_trang = true`, [id]
-    );
-    return data.rows;
-  }
-  async getAllOpen() {
-    const data = await pool.query(
-      `select dichvus.*
-      from dichvus 
-      join santhethaos on dichvus.id_san = santhethaos.id 
-      where dichvus.tinh_trang = true and santhethaos.tinh_trang = true`
-    );
-    return data.rows;
-  }
-}
-module.exports = new DichVu();
+
+  Dichvu.init({
+    id_san: DataTypes.INTEGER,
+    ten_dich_vu: DataTypes.STRING,
+    mo_ta: DataTypes.STRING,
+    don_gia: DataTypes.NUMERIC,
+    tinh_trang: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
+  }, {
+    sequelize,
+    modelName: 'Dichvu',
+    tableName: 'dichvus',
+    timestamps: true,
+    indexes: [
+      { fields: ['id_san'] }
+    ]
+  });
+
+  return Dichvu;
+};

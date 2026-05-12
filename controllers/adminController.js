@@ -1,5 +1,5 @@
-const admins = require("../models/admins");
-const chusans = require("../models/chusans");
+const {Admin} = require("../models");
+const {Chusan} = require("../models");
 const bcrypt = require("bcrypt");
 
 class adminController {

@@ -1,51 +1,65 @@
-const pool = require("../db");
+'use strict';
+const { Model } = require('sequelize');
 
-class lichsuthanhtoans {
-  async add(id_dat_san, phuong_thuc, thanh_tien, noi_dung) {
-    const data = await pool.query(
-      "INSERT INTO lichsuthanhtoans(id_dat_san, phuong_thuc, thanh_tien, noi_dung) VALUES ($1,$2,$3,$4,$5) returning *",
-      [id_dat_san, phuong_thuc, thanh_tien]
-    );
-    return data.rows[0];
-  }
+module.exports = (sequelize, DataTypes) => {
+  class Lichsuthanhtoan extends Model {
+    static associate(models) {
+      Lichsuthanhtoan.belongsTo(models.Datsan, { foreignKey: 'id_dat_san' });
+    }
 
-  async delete(id) {
-    const data = await pool.query(
-      "delete from lichsuthanhtoans where id=$1 returning *",
-      [id]
-    );
-    return data.rows[0];
-  }
+    static async add(id_dat_san, phuong_thuc, thanh_tien, noi_dung) {
+      // Vì bảng hiện tại không có cột noi_dung, hàm sẽ bỏ qua noi_dung theo Schema SQL
+      return await this.create({ id_dat_san, phuong_thuc, thanh_tien });
+    }
 
-  async getAll() {
-    const data = await pool.query(
-      `SELECT lichsudatsans.*, datsans.*, nguoidungs.id, nguoidungs.ho_ten, vitrisans.*, monchois.id, monchois.ten_mon,
-                santhethaos.id, santhethaos.ten_san
-        FROM lichsudatsans
-        JOIN datsans ON datsans.id = lichsudatsans.id_dat_san
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
+    }
+
+    static async getAll() {
+      const query = `
+        SELECT lichsuthanhtoans.*, datsans."orderCode", datsans.ngay_dat, datsans.gio_dat, 
+               nguoidungs.id AS id_nguoi_dung, nguoidungs.ho_ten, 
+               vitrisans.so_san, monchois.ten_mon, santhethaos.ten_san
+        FROM lichsuthanhtoans
+        JOIN datsans ON datsans.id = lichsuthanhtoans.id_dat_san
         JOIN nguoidungs ON datsans.id_nguoi_dung = nguoidungs.id
-        JOIN vitrisans ON vitrisans.id = datsans.id_vi_tri_san
-        JOIN monchois ON monchois.id = vitrisans.id_mon_choi
-        JOIN santhethaos ON santhethaos.id = vitrisans.id_san`
-    );
-    return data.rows;
-  }
-
-  async getAllOpen(id_nguoi_dung) {
-    const data = await pool.query(
-      `SELECT lichsudatsans.*, datsans.*, nguoidungs.id, nguoidungs.ho_ten, vitrisans.*, monchois.id, monchois.ten_mon,
-                santhethaos.id, santhethaos.ten_san
-        FROM lichsudatsans
-        JOIN datsans ON datsans.id = lichsudatsans.id_dat_san
-        JOIN nguoidungs ON datsans.id_nguoi_dung = nguoidungs.id
-        JOIN vitrisans ON vitrisans.id = datsans.id_vi_tri_san
+        JOIN vitrisans ON vitrisans.id = datsans.id_vi_tri_dat_san
         JOIN monchois ON monchois.id = vitrisans.id_mon_choi
         JOIN santhethaos ON santhethaos.id = vitrisans.id_san
-        WHERE nguoidungs.id = $1 and lichsuthanhtoans.tinh_trang = true`,
-      [id_nguoi_dung]
-    );
-    return data.rows;
-  }
-}
+      `;
+      return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+    }
 
-module.exports = new lichsuthanhtoans();
+    static async getAllOpen(id_nguoi_dung) {
+      const query = `
+        SELECT lichsuthanhtoans.*, datsans."orderCode", datsans.ngay_dat, datsans.gio_dat, 
+               nguoidungs.id AS id_nguoi_dung, nguoidungs.ho_ten, 
+               vitrisans.so_san, monchois.ten_mon, santhethaos.ten_san
+        FROM lichsuthanhtoans
+        JOIN datsans ON datsans.id = lichsuthanhtoans.id_dat_san
+        JOIN nguoidungs ON datsans.id_nguoi_dung = nguoidungs.id
+        JOIN vitrisans ON vitrisans.id = datsans.id_vi_tri_dat_san
+        JOIN monchois ON monchois.id = vitrisans.id_mon_choi
+        JOIN santhethaos ON santhethaos.id = vitrisans.id_san
+        WHERE nguoidungs.id = :id_nguoi_dung AND lichsuthanhtoans.tinh_trang = true
+      `;
+      return await sequelize.query(query, { replacements: { id_nguoi_dung }, type: sequelize.QueryTypes.SELECT });
+    }
+  }
+
+  Lichsuthanhtoan.init({
+    id_dat_san: DataTypes.INTEGER,
+    phuong_thuc: DataTypes.ENUM('Chuyển Khoản'),
+    thanh_tien: DataTypes.STRING, // Dựa theo DB_W3.sql thanh_tien là character varying
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Lichsuthanhtoan',
+    tableName: 'lichsuthanhtoans',
+    indexes: [{ fields: ['id_dat_san'], name: 'idx_lichsuthanhtoans_datsan' }]
+  });
+  return Lichsuthanhtoan;
+};

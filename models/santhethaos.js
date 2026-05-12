@@ -1,170 +1,97 @@
-const pool = require("../db");
+'use strict';
+const { Model } = require('sequelize');
 
-class SanTheThao {
-    async add(
-        id_chu_san,
-        ten_san,
-        loai_san,
-        icon,
-        huyen,
-        thanh_pho,
-        dia_chi_cu_the,
-        mota,
-        hinh_anh,
-        gio_mo_cua,
-        gio_dong_cua,
-        kinh_do,
-        vi_do
-    ) {
-        const data = await pool.query(
-            `INSERT INTO santhethaos (
-        id_chu_san, ten_san, loai_san,icon, huyen, thanh_pho, dia_chi_cu_the,
-        mo_ta, hinh_anh, gio_mo_cua, gio_dong_cua, kinh_do, vi_do
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12,$13)
-      RETURNING *`,
-            [
-                id_chu_san,
-                ten_san,
-                loai_san,
-                icon,
-                huyen,
-                thanh_pho,
-                dia_chi_cu_the,
-                mota,
-                hinh_anh,
-                gio_mo_cua,
-                gio_dong_cua,
-                kinh_do,
-                vi_do,
-            ]
-        );
-        return data.rows[0];
+module.exports = (sequelize, DataTypes) => {
+  class Santhethao extends Model {
+    static associate(models) {
+      Santhethao.belongsTo(models.Chusan, { foreignKey: 'id_chu_san' });
+      Santhethao.hasMany(models.Vitrisan, { foreignKey: 'id_san' });
+      Santhethao.hasMany(models.Dichvu, { foreignKey: 'id_san' });
+      Santhethao.hasMany(models.Magiamgia, { foreignKey: 'id_san' });
+      Santhethao.hasMany(models.Sukien, { foreignKey: 'id_san' });
+      Santhethao.hasMany(models.Thongbao, { foreignKey: 'id_san' });
+      Santhethao.hasMany(models.Nhanvien, { foreignKey: 'id_san' });
     }
 
-    async update(
-        id,
-        id_chu_san,
-        ten_san,
-        loai_san,
-        icon,
-        huyen,
-        thanh_pho,
-        dia_chi_cu_the,
-        mo_ta,
-        hinh_anh,
-        gio_mo_cua,
-        gio_dong_cua,
-        kinh_do,
-        vi_do,
-        tinh_trang
-    ) {
-        if (hinh_anh === undefined) {
-            const data = await pool.query(
-                `UPDATE santhethaos
-                SET ten_san = $1, loai_san = $2, huyen = $3, thanh_pho = $4,
-                dia_chi_cu_the = $5, mo_ta = $6, gio_mo_cua = $7, gio_dong_cua = $8,
-                kinh_do = $9, vi_do = $10, tinh_trang = $12
-                WHERE id = $11 RETURNING *`,
-                [
-                    ten_san,
-                    loai_san,
-                    huyen,
-                    thanh_pho,
-                    dia_chi_cu_the,
-                    mo_ta,
-                    gio_mo_cua,
-                    gio_dong_cua,
-                    kinh_do,
-                    vi_do,
-                    id,
-                    tinh_trang,
-                ]
-            );
-            return data.rows[0];
-        } else {
-            const data = await pool.query(
-                `UPDATE santhethaos
-                SET ten_san = $1, loai_san = $2, huyen = $3, thanh_pho = $4,
-                dia_chi_cu_the = $5, mo_ta = $6, hinh_anh = $7, gio_mo_cua = $8, gio_dong_cua = $9,
-                kinh_do = $10, vi_do = $11, tinh_trang = $13
-                WHERE id = $12 RETURNING *`,
-                [
-                    ten_san,
-                    loai_san,
-                    huyen,
-                    thanh_pho,
-                    dia_chi_cu_the,
-                    mo_ta,
-                    hinh_anh,
-                    gio_mo_cua,
-                    gio_dong_cua,
-                    kinh_do,
-                    vi_do,
-                    id,
-                    tinh_trang,
-                ]
-            );
-            return data.rows[0];
-        }
+    static async add(id_chu_san, ten_san, loai_san, icon, huyen, thanh_pho, dia_chi_cu_the, mo_ta, hinh_anh, gio_mo_cua, gio_dong_cua, kinh_do, vi_do) {
+      return await this.create({
+        id_chu_san, ten_san, loai_san, icon, huyen, thanh_pho, dia_chi_cu_the, mo_ta, hinh_anh, gio_mo_cua, gio_dong_cua, kinh_do, vi_do
+      });
     }
 
-    async delete(id) {
-        const data = await pool.query(
-            `DELETE FROM santhethaos WHERE id = $1 RETURNING *`,
-            [id]
-        );
-        return data.rows[0];
+    static async updateRecord(id, id_chu_san, ten_san, loai_san, icon, huyen, thanh_pho, dia_chi_cu_the, mo_ta, hinh_anh, gio_mo_cua, gio_dong_cua, kinh_do, vi_do, tinh_trang) {
+      const updateData = { ten_san, loai_san, icon, huyen, thanh_pho, dia_chi_cu_the, mo_ta, gio_mo_cua, gio_dong_cua, kinh_do, vi_do, tinh_trang };
+      if (hinh_anh !== undefined) updateData.hinh_anh = hinh_anh;
+      
+      const [, [updated]] = await this.update(updateData, { where: { id }, returning: true });
+      return updated;
     }
 
-    async getAllOpen() {
-        const data = await pool.query(
-            `SELECT santhethaos.* FROM santhethaos  where tinh_trang = true`
-        );
-        return data.rows;
-    }
-    async getAllByChuSan(id_chu_san) {
-        const data = await pool.query(
-            `SELECT santhethaos.* 
-            FROM santhethaos 
-            WHERE santhethaos.id_chu_san = $1`,
-            [id_chu_san]
-        );
-        return data.rows;
-    }
-    async getAllByChuSanOpen(id_chu_san) {
-        const data = await pool.query(
-            `SELECT santhethaos.* 
-            FROM santhethaos 
-            WHERE santhethaos.id_chu_san = $1
-            AND tinh_trang = true`,
-            [id_chu_san]
-        );
-        return data.rows;
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
     }
 
-    async getById(id_san) {
-        const data = await pool.query(
-            `SELECT stt.kinh_do, stt.vi_do, stt.huyen, stt.ten_san, stt.thanh_pho, stt.dia_chi_cu_the, stt.gio_mo_cua, stt.gio_dong_cua,  
+    static async getAllOpen() {
+      return await this.findAll({ where: { tinh_trang: true } });
+    }
+
+    static async getAllByChuSan(id_chu_san) {
+      return await this.findAll({ where: { id_chu_san } });
+    }
+
+    static async getAllByChuSanOpen(id_chu_san) {
+      return await this.findAll({ where: { id_chu_san, tinh_trang: true } });
+    }
+
+    static async getById(id_san) {
+      const query = `
+        SELECT stt.kinh_do, stt.vi_do, stt.huyen, stt.ten_san, stt.thanh_pho, stt.dia_chi_cu_the, stt.gio_mo_cua, stt.gio_dong_cua,  
                 vitrisans.*, monchois.ten_mon
-            FROM santhethaos stt 
-            LEFT JOIN vitrisans ON stt.id = vitrisans.id_san AND vitrisans.tinh_trang = true
-            LEFT JOIN monchois ON vitrisans.id_mon_choi = monchois.id
-            WHERE stt.id = $1`,
-            [id_san]
-        );
-        return data.rows;
+        FROM santhethaos stt 
+        LEFT JOIN vitrisans ON stt.id = vitrisans.id_san AND vitrisans.tinh_trang = true
+        LEFT JOIN monchois ON vitrisans.id_mon_choi = monchois.id
+        WHERE stt.id = :id_san
+      `;
+      return await sequelize.query(query, { replacements: { id_san }, type: sequelize.QueryTypes.SELECT });
     }
-    async getDataById(id_san) {
-        const data = await pool.query(
-            `SELECT vitrisans.so_san, vitrisans.id, vitrisans.gia_san, vitrisans.mo_ta, monchois.ten_mon, monchois.id as id_mon_choi, datsans.ngay_dat + INTERVAL '1 day' as ngay_dat, datsans.gio_dat
-            FROM vitrisans JOIN monchois ON vitrisans.id_mon_choi = monchois.id JOIN datsans ON vitrisans.id = datsans.id_vi_tri_dat_san
-            WHERE vitrisans.id_san = $1 AND vitrisans.tinh_trang = true AND monchois.tinh_trang = true`,
-            [id_san]
-        );
-        return data.rows;
-    }
-    
-}
 
-module.exports = new SanTheThao();
+    static async getDataById(id_san) {
+      const query = `
+        SELECT vitrisans.so_san, vitrisans.id, vitrisans.gia_san, vitrisans.mo_ta, monchois.ten_mon, monchois.id as id_mon_choi, datsans.ngay_dat + INTERVAL '1 day' as ngay_dat, datsans.gio_dat
+        FROM vitrisans 
+        JOIN monchois ON vitrisans.id_mon_choi = monchois.id 
+        JOIN datsans ON vitrisans.id = datsans.id_vi_tri_dat_san
+        WHERE vitrisans.id_san = :id_san AND vitrisans.tinh_trang = true AND monchois.tinh_trang = true
+      `;
+      return await sequelize.query(query, { replacements: { id_san }, type: sequelize.QueryTypes.SELECT });
+    }
+  }
+
+  Santhethao.init({
+    id_chu_san: DataTypes.INTEGER,
+    ten_san: DataTypes.STRING,
+    loai_san: DataTypes.STRING,
+    icon: DataTypes.STRING,
+    huyen: DataTypes.STRING,
+    thanh_pho: DataTypes.STRING,
+    dia_chi_cu_the: DataTypes.STRING,
+    mo_ta: DataTypes.STRING,
+    hinh_anh: DataTypes.STRING,
+    gio_mo_cua: DataTypes.TIME,
+    gio_dong_cua: DataTypes.TIME,
+    kinh_do: DataTypes.STRING,
+    vi_do: DataTypes.STRING,
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Santhethao',
+    tableName: 'santhethaos',
+    indexes: [
+      { fields: ['id_chu_san'], name: 'idx_santhethaos_chusan' },
+      { fields: ['thanh_pho', 'huyen'], name: 'idx_santhethaos_diachi' }
+    ]
+  });
+  return Santhethao;
+};

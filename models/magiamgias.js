@@ -1,98 +1,83 @@
-const pool = require("../db");
+'use strict';
+const { Model } = require('sequelize');
 
-class magiamgias {
-    async add(
-        id_san,
-        ma_giam_gia,
-        gia_tri_giam,
-        mo_ta,
-        loai_giam_gia,
-        ngay_bat_dau,
-        ngay_ket_thuc
-    ) {
-        const data = await pool.query(
-            `INSERT INTO magiamgias(loai_giam_gia, ma_giam_gia, gia_tri_giam, mo_ta , ngay_bat_dau, ngay_ket_thuc, id_san)
-     VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING *`,
-            [
-                loai_giam_gia,
-                ma_giam_gia,
-                gia_tri_giam,
-                mo_ta,
-                ngay_bat_dau,
-                ngay_ket_thuc,
-                id_san,
-            ]
-        );
-        return data.rows[0];
+module.exports = (sequelize, DataTypes) => {
+  class Magiamgia extends Model {
+    static associate(models) {
+      Magiamgia.belongsTo(models.Santhethao, { foreignKey: 'id_san' });
     }
 
-    async update(
-        ma_giam_gia,
-        gia_tri_giam,
-        mo_ta,
-        loai_giam_gia,
-        ngay_bat_dau,
-        ngay_ket_thuc,
-        tinh_trang,
-        id
-    ) {
-        const data = await pool.query(
-            `UPDATE magiamgias 
-     SET ma_giam_gia = $1, gia_tri_giam = $2, mo_ta = $3, loai_giam_gia = $4, ngay_bat_dau = $5, ngay_ket_thuc = $6,tinh_trang=$7, "updatedAt" = NOW() 
-     WHERE id = $8 RETURNING *`,
-            [
-                ma_giam_gia,
-                gia_tri_giam,
-                mo_ta,
-                loai_giam_gia,
-                ngay_bat_dau,
-                ngay_ket_thuc,
-                tinh_trang,
-                id,
-            ]
-        );
-        return data.rows[0];
+    static async add(id_san, ma_giam_gia, gia_tri_giam, mo_ta, loai_giam_gia, ngay_bat_dau, ngay_ket_thuc) {
+      return await this.create({ id_san, ma_giam_gia, gia_tri_giam, mo_ta, loai_giam_gia, ngay_bat_dau, ngay_ket_thuc });
     }
 
-    async delete(id) {
-        const data = await pool.query(
-            "DELETE FROM magiamgias WHERE id = $1 RETURNING *",
-            [id]
-        );
-        return data.rows[0];
+    static async updateRecord(ma_giam_gia, gia_tri_giam, mo_ta, loai_giam_gia, ngay_bat_dau, ngay_ket_thuc, tinh_trang, id) {
+      const [, [updated]] = await this.update(
+        { ma_giam_gia, gia_tri_giam, mo_ta, loai_giam_gia, ngay_bat_dau, ngay_ket_thuc, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
     }
 
-    async getAll(id) {
-        const data = await pool.query(
-            `SELECT magiamgias.*
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
+    }
+
+    static async getAll(id_chu_san) {
+      const query = `
+        SELECT magiamgias.*
         FROM magiamgias 
-        JOIN santhethaos ON magiamgias.id_san = santhethaos.id where santhethaos.id_chu_san = $1 and santhethaos.tinh_trang = true`,
-            [id]
-        );
-        return data.rows;
+        JOIN santhethaos ON magiamgias.id_san = santhethaos.id 
+        WHERE santhethaos.id_chu_san = :id_chu_san AND santhethaos.tinh_trang = true
+      `;
+      return await sequelize.query(query, { replacements: { id_chu_san }, type: sequelize.QueryTypes.SELECT });
     }
 
-    async getAllOpen() {
-        const data = await pool.query(
-            `SELECT magiamgias.*, santhethaos.id,santhethaos.ten_san, santhethaos.tinh_trang 
-      FROM magiamgias 
-      JOIN santhethaos ON magiamgias.id_san = santhethaos.id 
-      WHERE magiamgias.tinh_trang = true and santhethaos.tinh_trang = true`
-        );
-        return data.rows;
+    static async getAllOpen() {
+      const query = `
+        SELECT magiamgias.*, santhethaos.id as id_san, santhethaos.ten_san, santhethaos.tinh_trang as tinh_trang_san
+        FROM magiamgias 
+        JOIN santhethaos ON magiamgias.id_san = santhethaos.id 
+        WHERE magiamgias.tinh_trang = true AND santhethaos.tinh_trang = true
+      `;
+      return await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
     }
 
-    async kiemTraMa(magiamgia, id_san) {
-        const data = await pool.query(
-            `SELECT magiamgias.gia_tri_giam
+    static async kiemTraMa(ma_giam_gia, id_san) {
+      const query = `
+        SELECT magiamgias.gia_tri_giam
         FROM magiamgias
-        WHERE ma_giam_gia = $1 AND id_san = $2
+        WHERE ma_giam_gia = :ma_giam_gia AND id_san = :id_san
         AND tinh_trang = true
-        AND NOW() BETWEEN ngay_bat_dau AND ngay_ket_thuc;`,
-            [magiamgia, id_san]
-        );
-        return data.rows[0];
+        AND NOW() BETWEEN ngay_bat_dau AND ngay_ket_thuc;
+      `;
+      const results = await sequelize.query(query, { 
+        replacements: { ma_giam_gia, id_san }, 
+        type: sequelize.QueryTypes.SELECT 
+      });
+      return results[0];
     }
-}
+  }
 
-module.exports = new magiamgias();
+  Magiamgia.init({
+    id_san: DataTypes.INTEGER,
+    ma_giam_gia: DataTypes.STRING,
+    gia_tri_giam: DataTypes.DOUBLE,
+    mo_ta: DataTypes.STRING,
+    loai_giam_gia: DataTypes.ENUM('Phần Trăm', 'Tiền Mặt'),
+    ngay_bat_dau: DataTypes.DATE,
+    ngay_ket_thuc: DataTypes.DATE,
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Magiamgia',
+    tableName: 'magiamgias',
+    indexes: [
+      { fields: ['ma_giam_gia', 'id_san'], name: 'idx_magiamgias_ma' },
+      { fields: ['ngay_bat_dau', 'ngay_ket_thuc'], name: 'idx_magiamgias_date' }
+    ]
+  });
+  return Magiamgia;
+};

@@ -1,88 +1,79 @@
-const pool = require("../db");
+'use strict';
+const { Model } = require('sequelize');
 
-class nguoidungs {
-    async add(ho_ten, email, hashed, so_dien_thoai, gioi_tinh) {
-        const data = await pool.query(
-            "INSERT INTO nguoidungs(ho_ten ,email,mat_khau ,so_dien_thoai ,gioi_tinh) VALUES ($1,$2,$3,$4,$5) returning*",
-            [ho_ten, email, hashed, so_dien_thoai, gioi_tinh]
-        );
-        return data.rows[0];
+module.exports = (sequelize, DataTypes) => {
+  class Nguoidung extends Model {
+    static associate(models) {
+      Nguoidung.hasMany(models.Datsan, { foreignKey: 'id_nguoi_dung' });
+      Nguoidung.hasMany(models.Danhgia, { foreignKey: 'id_nguoi_dung' });
     }
 
-    async delete(id) {
-        const data = await pool.query(
-            "DELETE FROM nguoidungs WHERE id = $1 RETURNING *",
-            [id]
-        );
-        return data.rows[0];
+    // Logic DAO cũ chuyển thành Static Methods
+    static async add(ho_ten, email, hashed, so_dien_thoai, gioi_tinh) {
+      return await this.create({ ho_ten, email, mat_khau: hashed, so_dien_thoai, gioi_tinh });
     }
 
-    async verify(email) {
-        await pool.query(
-            'UPDATE nguoidungs SET is_verified = TRUE, "updatedAt" = NOW() WHERE email = $1',
-            [email]
-        );
+    static async deleteRecord(id) {
+      const record = await this.findByPk(id);
+      if (record) await record.destroy();
+      return record;
     }
 
-    async update(
-        id,
-        ho_ten,
-        email,
-        hashed,
-        so_dien_thoai,
-        gioi_tinh,
-        tinh_trang
-    ) {
-        const data = await pool.query(
-            'UPDATE nguoidungs SET ho_ten = $1, mat_khau = $2, email = $3, so_dien_thoai = $4, gioi_tinh = $5, tinh_trang = $6, "updatedAt" = NOW() WHERE id = $7 RETURNING *',
-            [ho_ten, hashed, email, so_dien_thoai, gioi_tinh, tinh_trang, id]
-        );
-        return data.rows[0];
+    static async verify(email) {
+      return await this.update({ is_verified: true }, { where: { email } });
     }
 
-    async updateOpen(id, ho_ten, so_dien_thoai, gioi_tinh, tinh_trang) {
-        const data = await pool.query(
-            'UPDATE nguoidungs SET ho_ten = $1, so_dien_thoai = $2, gioi_tinh = $3, "updatedAt" = NOW() WHERE id = $4 RETURNING *',
-            [ho_ten, so_dien_thoai, gioi_tinh, id]
-        );
-        return data.rows[0];
+    static async updateRecord(id, ho_ten, email, hashed, so_dien_thoai, gioi_tinh, tinh_trang) {
+      const [, [updated]] = await this.update(
+        { ho_ten, mat_khau: hashed, email, so_dien_thoai, gioi_tinh, tinh_trang },
+        { where: { id }, returning: true }
+      );
+      return updated;
     }
 
-    async changeMatKhau(id, hashed) {
-        await pool.query(
-            'UPDATE nguoidungs SET mat_khau = $1, "updatedAt" = NOW() WHERE id = $2',
-            [hashed, id]
-        );
+    static async updateOpen(id, ho_ten, so_dien_thoai, gioi_tinh) {
+      const [, [updated]] = await this.update(
+        { ho_ten, so_dien_thoai, gioi_tinh },
+        { where: { id }, returning: true }
+      );
+      return updated;
     }
 
-    async getAll() {
-        const data = await pool.query("SELECT * FROM nguoidungs");
-        return data.rows;
+    static async changeMatKhau(id, hashed) {
+      return await this.update({ mat_khau: hashed }, { where: { id } });
     }
 
-    async getByEmail(email) {
-        const data = await pool.query(
-            "SELECT * FROM nguoidungs where email = $1",
-            [email]
-        );
-        return data;
+    static async getAll() {
+      return await this.findAll();
     }
 
-    async getById(id) {
-        const data = await pool.query(
-            "SELECT * FROM nguoidungs where id = $1",
-            [id]
-        );
-        return data.rows[0];
+    static async getByEmail(email) {
+      // Trả về định dạng giống query cũ để không break logic xử lý row
+      const data = await this.findOne({ where: { email } });
+      return { rows: data ? [data] : [], rowCount: data ? 1 : 0 };
     }
 
-    async delete(id) {
-        const data = await pool.query(
-            "DELETE FROM nguoidungs WHERE id = $1 RETURNING *",
-            [id]
-        );
-        return data.rows[0];
+    static async getById(id) {
+      return await this.findByPk(id);
     }
-}
+  }
 
-module.exports = new nguoidungs();
+  Nguoidung.init({
+    ho_ten: DataTypes.STRING,
+    email: { type: DataTypes.STRING, unique: true },
+    mat_khau: DataTypes.STRING,
+    so_dien_thoai: { type: DataTypes.STRING, unique: true },
+    gioi_tinh: DataTypes.ENUM('Nam', 'Nữ', 'Khác'),
+    is_verified: { type: DataTypes.BOOLEAN, defaultValue: false },
+    tinh_trang: { type: DataTypes.BOOLEAN, defaultValue: true }
+  }, {
+    sequelize,
+    modelName: 'Nguoidung',
+    tableName: 'nguoidungs',
+    indexes: [
+      { unique: true, fields: ['email'], name: 'idx_nguoidungs_email' },
+      { unique: true, fields: ['so_dien_thoai'], name: 'idx_nguoidungs_phone' }
+    ]
+  });
+  return Nguoidung;
+};
