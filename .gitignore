@@ -3,3 +3,4 @@ backup.sql
 docker-compose.yml
 Dockerfile
 .env
+backend.tar.gz

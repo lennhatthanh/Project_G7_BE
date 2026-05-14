@@ -1,0 +1,11 @@
+# Example terraform.tfvars file
+# Copy this to terraform.tfvars and fill in your values
+
+region         = "ap-southeast-1"
+project_name   = "sango"
+env            = "dev"
+team_ip_cidr   = "1.2.3.4/32"  # Replace with your team's public IP
+key_pair_name  = "your-key-pair-name"  # Replace with your EC2 key pair name
+db_password    = "YourSecurePassword123!"  # Replace with a strong password
+valid_api_key  = "sango-secret-key-2026"
+account_id     = "123456789012"  # Replace with your AWS account ID

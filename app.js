@@ -46,11 +46,23 @@ const envCorsOrigins = (process.env.CORS_ORIGINS || "")
 const allowedOrigins = envCorsOrigins.length > 0 ? envCorsOrigins : defaultCorsOrigins;
 
 app.use(methodOverride());
+const allowedOrigins = (process.env.ALLOWED_ORIGINS || "https://lnnhatthanh.id.vn")
+  .split(",")
+  .map((origin) => origin.trim());
+
 app.use(cors({
+<<<<<<< Updated upstream
   origin: function(origin, callback) {
     if (!origin || allowedOrigins.includes(origin)) {
       return callback(null, true);
     }
+=======
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.includes("*") || allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+
+>>>>>>> Stashed changes
     return callback(new Error("Not allowed by CORS"));
   },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
